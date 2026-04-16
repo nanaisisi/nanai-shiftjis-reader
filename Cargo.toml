@@ -1,0 +1,28 @@
+[package]
+name = "nanai-shiftjis-reader"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate_name = "explorer_com"
+crate-type = ["cdylib"]
+
+[lib.profile.release]
+lto = true
+opt-level = "s"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[dependencies]
+encoding_rs = { version = "0.8" }
+gpui = "0.2"
+windows = { version = "0.62", features = [
+    "Foundation",
+    "ApplicationModel",
+    "Win32",
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+] }
+windows-core = { version = "0.62", default-features = false }
