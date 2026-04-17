@@ -13,6 +13,7 @@ impl Render for ReadText {
             .flex()
             .flex_col()
             .gap_3()
+            .p(px(16.0))
             .bg(rgb(0x505050))
             .size(px(500.0))
             .justify_start()
