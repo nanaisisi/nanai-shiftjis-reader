@@ -62,6 +62,9 @@
             <desktop5:ItemType Type="*">
               <desktop5:Verb Id="Command1" Clsid="13C09516-2403-4688-9CF2-2C9C41F338BF" />
             </desktop5:ItemType>
+            <desktop5:ItemType Type="Directory">
+              <desktop5:Verb Id="Command1" Clsid="13C09516-2403-4688-9CF2-2C9C41F338BF" />
+            </desktop5:ItemType>
           </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
       </Extensions>
