@@ -1,6 +1,6 @@
 use gpui::{
     App, Application, Bounds, Context, SharedString, Window, WindowBounds, WindowOptions, div,
-    prelude::*, px, rgb, size,
+    point, prelude::*, px, rgb, size,
 };
 
 struct ReadText {
@@ -15,8 +15,8 @@ impl Render for ReadText {
             .gap_3()
             .bg(rgb(0x505050))
             .size(px(500.0))
-            .justify_center()
-            .items_center()
+            .justify_start()
+            .items_start()
             .shadow_lg()
             .border_1()
             .border_color(rgb(0x0000ff))
@@ -24,12 +24,14 @@ impl Render for ReadText {
             .text_color(rgb(0xffffff))
             .child(format!("{}!", &self.text))
             .child(div().flex().gap_2())
+            .id("vertical")
+            .overflow_scroll()
     }
 }
 
 pub fn ui(decoded_text: String) {
     Application::new().run(|cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(500.), px(500.0)), cx);
+        let bounds = Bounds::new(point(px(100.), px(100.)), size(px(500.), px(500.0)));
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
