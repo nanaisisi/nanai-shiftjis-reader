@@ -8,11 +8,14 @@ use std::{
     ptr,
     sync::atomic::{AtomicU32, Ordering},
 };
+
+static GLOBAL_OBJECT_COUNT: AtomicU32 = AtomicU32::new(0);
+static GLOBAL_LOCK_COUNT: AtomicU32 = AtomicU32::new(0);
 use windows::{
     Win32::{
         Foundation::{
             CLASS_E_CLASSNOTAVAILABLE, CLASS_E_NOAGGREGATION, E_NOINTERFACE, E_NOTIMPL,
-            E_OUTOFMEMORY, E_POINTER, S_OK,
+            E_OUTOFMEMORY, E_POINTER, S_FALSE, S_OK,
         },
         System::{
             Com::{CoTaskMemAlloc, CoTaskMemFree, IClassFactory, IClassFactory_Vtbl},
@@ -32,7 +35,7 @@ fn to_wide_null(value: &str) -> Vec<u16> {
 }
 
 unsafe fn get_dll_directory() -> Option<PathBuf> {
-    let module_name = to_wide_null("explorer_com.dll");
+    let module_name = to_wide_null("nanai_shiftjis_reader.dll");
     let module = unsafe { GetModuleHandleW(PCWSTR(module_name.as_ptr())) }.ok()?;
     if module.is_invalid() {
         return None;
@@ -182,6 +185,7 @@ unsafe extern "system" fn explorer_command_release(this: *mut c_void) -> u32 {
         unsafe {
             drop(Box::from_raw(object));
         }
+        GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
     }
     count
 }
@@ -191,6 +195,9 @@ unsafe extern "system" fn explorer_command_get_title(
     _psiitemarray: *mut c_void,
     ppszname: *mut PWSTR,
 ) -> HRESULT {
+    if ppszname.is_null() {
+        return E_POINTER;
+    }
     match allocate_pwstr("nanai-txt-viewer") {
         Ok(ptr) => {
             unsafe {
@@ -207,10 +214,13 @@ unsafe extern "system" fn explorer_command_get_icon(
     _psiitemarray: *mut c_void,
     ppszicon: *mut PWSTR,
 ) -> HRESULT {
+    if ppszicon.is_null() {
+        return E_POINTER;
+    }
     unsafe {
         *ppszicon = PWSTR::default();
     }
-    S_OK
+    E_NOTIMPL
 }
 
 unsafe extern "system" fn explorer_command_get_tooltip(
@@ -218,6 +228,9 @@ unsafe extern "system" fn explorer_command_get_tooltip(
     _psiitemarray: *mut c_void,
     ppztip: *mut PWSTR,
 ) -> HRESULT {
+    if ppztip.is_null() {
+        return E_POINTER;
+    }
     match allocate_pwstr("Open with nanai-txt-viewer") {
         Ok(ptr) => {
             unsafe {
@@ -319,6 +332,7 @@ static EXPLORER_COMMAND_VTBL: IExplorerCommand_Vtbl = IExplorerCommand_Vtbl {
 };
 
 unsafe fn create_explorer_command() -> *mut ExplorerCommandObject {
+    GLOBAL_OBJECT_COUNT.fetch_add(1, Ordering::Relaxed);
     Box::into_raw(Box::new(ExplorerCommandObject {
         lp_vtbl: &EXPLORER_COMMAND_VTBL,
         ref_count: AtomicU32::new(1),
@@ -366,6 +380,7 @@ unsafe extern "system" fn class_factory_release(this: *mut c_void) -> u32 {
         unsafe {
             drop(Box::from_raw(object));
         }
+        GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
     }
     count
 }
@@ -395,14 +410,20 @@ unsafe extern "system" fn class_factory_create_instance(
         }
         S_OK
     } else {
+        GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
         unsafe {
-            (*command).ref_count.fetch_sub(1, Ordering::Relaxed);
+            drop(Box::from_raw(command));
         }
         E_NOINTERFACE
     }
 }
 
-unsafe extern "system" fn class_factory_lock_server(_this: *mut c_void, _flock: BOOL) -> HRESULT {
+unsafe extern "system" fn class_factory_lock_server(_this: *mut c_void, flock: BOOL) -> HRESULT {
+    if flock.as_bool() {
+        GLOBAL_LOCK_COUNT.fetch_add(1, Ordering::Relaxed);
+    } else {
+        GLOBAL_LOCK_COUNT.fetch_sub(1, Ordering::Relaxed);
+    }
     S_OK
 }
 
@@ -417,6 +438,7 @@ static CLASS_FACTORY_VTBL: IClassFactory_Vtbl = IClassFactory_Vtbl {
 };
 
 unsafe fn create_class_factory() -> *mut ExplorerClassFactoryObject {
+    GLOBAL_OBJECT_COUNT.fetch_add(1, Ordering::Relaxed);
     Box::into_raw(Box::new(ExplorerClassFactoryObject {
         lp_vtbl: &CLASS_FACTORY_VTBL,
         ref_count: AtomicU32::new(1),
@@ -425,7 +447,13 @@ unsafe fn create_class_factory() -> *mut ExplorerClassFactoryObject {
 
 #[unsafe(no_mangle)]
 pub extern "system" fn DllCanUnloadNow() -> HRESULT {
-    S_OK
+    if GLOBAL_OBJECT_COUNT.load(Ordering::Relaxed) == 0
+        && GLOBAL_LOCK_COUNT.load(Ordering::Relaxed) == 0
+    {
+        S_OK
+    } else {
+        S_FALSE
+    }
 }
 
 #[unsafe(no_mangle)]
