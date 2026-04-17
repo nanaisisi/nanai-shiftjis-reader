@@ -51,15 +51,15 @@
       <Extensions>
         <com:Extension Category="windows.comServer">
           <com:ComServer>
-            <com:SurrogateServer DisplayName="ContextMenuSample">
-              <com:Class Id="13C09516-2403-4688-9CF2-2C9C41F338BF" Path="explorer_com.dll"
+            <com:SurrogateServer DisplayName="ContextMenuShiftJIS">
+              <com:Class Id="13C09516-2403-4688-9CF2-2C9C41F338BF" Path="nanai_shiftjis_reader.dll"
                 ThreadingModel="STA" />
             </com:SurrogateServer>
           </com:ComServer>
         </com:Extension>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
           <desktop4:FileExplorerContextMenus>
-            <desktop5:ItemType Type="Directory">
+            <desktop5:ItemType Type="*">
               <desktop5:Verb Id="Command1" Clsid="13C09516-2403-4688-9CF2-2C9C41F338BF" />
             </desktop5:ItemType>
           </desktop4:FileExplorerContextMenus>

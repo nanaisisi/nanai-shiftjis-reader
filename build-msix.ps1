@@ -75,6 +75,11 @@ try {
             New-Item -ItemType Directory -Path $distDir | Out-Null
         }
         Copy-Item -Path $releasePath -Destination $distDir -Force
+        Copy-Item -Path (Join-Path $projectRoot 'target\release\nanai_shiftjis_reader.dll') -Destination $distDir -Force
+        Copy-Item -Path $projectRoot\appxmanifest.xml -Destination $distDir -Force
+        if (Test-Path (Join-Path $projectRoot 'Assets')) {
+            Copy-Item -Path (Join-Path $projectRoot 'Assets') -Destination $distDir -Recurse -Force
+        }
     }
 
     function Generate-Cert {
@@ -87,7 +92,7 @@ try {
 
     function Pack-Msix {
         Write-Host 'Packing MSIX...' -ForegroundColor Cyan
-        winapp pack $distDir --cert $certPath
+        winapp pack $distDir --manifest (Join-Path $distDir 'appxmanifest.xml') --output $msixPath --cert $certPath
         if (-not (Test-Path $msixPath)) {
             Write-Warning "MSIX package not found at expected path: $msixPath"
         }

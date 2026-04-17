@@ -3,11 +3,11 @@ use gpui::{
     prelude::*, px, rgb, size,
 };
 
-struct HelloWorld {
+struct ReadText {
     text: SharedString,
 }
 
-impl Render for HelloWorld {
+impl Render for ReadText {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .flex()
@@ -36,7 +36,7 @@ pub fn ui(decoded_text: String) {
                 ..Default::default()
             },
             |_, cx| {
-                cx.new(|_| HelloWorld {
+                cx.new(|_| ReadText {
                     text: decoded_text.into(),
                 })
             },

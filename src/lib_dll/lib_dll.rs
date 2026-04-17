@@ -3,7 +3,8 @@
 use std::{
     ffi::{OsStr, c_void},
     mem,
-    os::windows::prelude::OsStrExt,
+    os::windows::prelude::{OsStrExt, OsStringExt},
+    path::PathBuf,
     ptr,
     sync::atomic::{AtomicU32, Ordering},
 };
@@ -13,11 +14,97 @@ use windows::{
             CLASS_E_CLASSNOTAVAILABLE, CLASS_E_NOAGGREGATION, E_NOINTERFACE, E_NOTIMPL,
             E_OUTOFMEMORY, E_POINTER, S_OK,
         },
-        System::Com::{CoTaskMemAlloc, IClassFactory, IClassFactory_Vtbl},
-        UI::Shell::{IExplorerCommand, IExplorerCommand_Vtbl},
+        System::{
+            Com::{CoTaskMemAlloc, CoTaskMemFree, IClassFactory, IClassFactory_Vtbl},
+            LibraryLoader::{GetModuleFileNameW, GetModuleHandleW},
+        },
+        UI::Shell::{
+            IExplorerCommand, IExplorerCommand_Vtbl, IShellItemArray, SIGDN_FILESYSPATH,
+            ShellExecuteW,
+        },
+        UI::WindowsAndMessaging::SW_SHOW,
     },
-    core::{self, BOOL, GUID, HRESULT, IUnknown, IUnknown_Vtbl, Interface, PWSTR},
+    core::{self, BOOL, GUID, HRESULT, IUnknown, IUnknown_Vtbl, Interface, PCWSTR, PWSTR},
 };
+
+fn to_wide_null(value: &str) -> Vec<u16> {
+    OsStr::new(value).encode_wide().chain(Some(0)).collect()
+}
+
+unsafe fn get_dll_directory() -> Option<PathBuf> {
+    let module_name = to_wide_null("explorer_com.dll");
+    let module = unsafe { GetModuleHandleW(PCWSTR(module_name.as_ptr())) }.ok()?;
+    if module.is_invalid() {
+        return None;
+    }
+
+    let mut buffer = vec![0u16; 260];
+    let len = unsafe { GetModuleFileNameW(Some(module), &mut buffer) };
+    if len == 0 {
+        return None;
+    }
+    buffer.truncate(len as usize);
+    Some(PathBuf::from(std::ffi::OsString::from_wide(&buffer)))
+}
+
+unsafe fn app_executable_path() -> Option<Vec<u16>> {
+    let mut path = unsafe { get_dll_directory()? };
+    path.set_file_name("nanai-shiftjis-reader.exe");
+    let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
+    wide.push(0);
+    Some(wide)
+}
+
+unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<Vec<u16>> {
+    if psiitemarray.is_null() {
+        return None;
+    }
+
+    let raw_unknown = unsafe { IUnknown::from_raw(psiitemarray as *mut _) };
+    let item_array: IShellItemArray = raw_unknown.cast().ok()?;
+    let item_count = unsafe { item_array.GetCount().ok()? };
+    if item_count == 0 {
+        return None;
+    }
+
+    let item = unsafe { item_array.GetItemAt(0).ok()? };
+    let psz_path = unsafe { item.GetDisplayName(SIGDN_FILESYSPATH).ok()? };
+    if psz_path.is_null() {
+        return None;
+    }
+
+    let mut len = 0usize;
+    unsafe {
+        while *psz_path.0.add(len) != 0 {
+            len += 1;
+        }
+    }
+    let path =
+        unsafe { std::ffi::OsString::from_wide(std::slice::from_raw_parts(psz_path.0, len)) };
+    unsafe {
+        CoTaskMemFree(Some(psz_path.0 as *const _));
+    }
+
+    let mut wide_path: Vec<u16> = path.encode_wide().collect();
+    wide_path.push(0);
+    Some(wide_path)
+}
+
+unsafe fn launch_with_viewer(exe_path: &[u16], file_path: &[u16]) -> bool {
+    let exe_pcw = PCWSTR(exe_path.as_ptr());
+    let params = PCWSTR(file_path.as_ptr());
+    let result = unsafe {
+        ShellExecuteW(
+            None,
+            PCWSTR(ptr::null()),
+            exe_pcw,
+            params,
+            PCWSTR(ptr::null()),
+            SW_SHOW,
+        )
+    };
+    (result.0 as isize) > 32
+}
 
 const CLSID_EXPLORER_COMMAND: GUID = GUID::from_values(
     0x13c09516,
@@ -175,6 +262,17 @@ unsafe extern "system" fn explorer_command_invoke(
     _psiitemarray: *mut c_void,
     _pbc: *mut c_void,
 ) -> HRESULT {
+    let file_path = match unsafe { get_selected_file_path(_psiitemarray) } {
+        Some(path) => path,
+        None => return S_OK,
+    };
+
+    if let Some(exe_path) = unsafe { app_executable_path() } {
+        if unsafe { launch_with_viewer(&exe_path, &file_path) } {
+            return S_OK;
+        }
+    }
+
     S_OK
 }
 

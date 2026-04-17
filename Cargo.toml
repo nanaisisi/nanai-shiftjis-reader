@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [lib]
-crate_name = "explorer_com"
 crate-type = ["cdylib"]
 
-[lib.profile.release]
+[profile.release]
 lto = true
 opt-level = "s"
 codegen-units = 1
@@ -23,6 +22,8 @@ windows = { version = "0.62", features = [
     "Win32",
     "Win32_Foundation",
     "Win32_System_Com",
+    "Win32_System_LibraryLoader",
     "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
 ] }
 windows-core = { version = "0.62", default-features = false }
