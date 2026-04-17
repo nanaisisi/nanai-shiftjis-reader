@@ -39,6 +39,7 @@ try {
     $certPath = Join-Path $projectRoot 'devcert.pfx'
     $msixName = 'nanai-shiftjis-reader.msix'
     $msixPath = Join-Path $projectRoot $msixName
+    $packageName = 'nanai-shiftjis-reader'
 
     function Build-Debug {
         if (-not $SkipBuild) {
@@ -92,7 +93,7 @@ try {
 
     function Pack-Msix {
         Write-Host 'Packing MSIX...' -ForegroundColor Cyan
-        winapp pack $distDir --manifest (Join-Path $distDir 'appxmanifest.xml') --output $msixPath --cert $certPath
+        winapp package $distDir --manifest (Join-Path $distDir 'appxmanifest.xml') --output $msixPath --cert $certPath
         if (-not (Test-Path $msixPath)) {
             Write-Warning "MSIX package not found at expected path: $msixPath"
         }
@@ -105,7 +106,12 @@ try {
 
     function Install-Msix {
         Write-Host 'Installing MSIX package...' -ForegroundColor Cyan
-        Add-AppxPackage $msixPath
+        $existingPackages = Get-AppxPackage | Where-Object { $_.Name -like "$packageName*" }
+        foreach ($pkg in $existingPackages) {
+            Write-Host "Removing existing package: $($pkg.PackageFullName)" -ForegroundColor Yellow
+            Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction SilentlyContinue
+        }
+        Add-AppxPackage -ForceApplicationShutdown -ForceUpdateFromAnyVersion $msixPath
     }
 
     switch ($Mode) {
