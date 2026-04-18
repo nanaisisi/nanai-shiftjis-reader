@@ -13,7 +13,7 @@ use windows::{
     core::{GUID, HRESULT, Interface},
 };
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn DllCanUnloadNow() -> HRESULT {
     if GLOBAL_OBJECT_COUNT.load(Ordering::Relaxed) == 0
         && GLOBAL_LOCK_COUNT.load(Ordering::Relaxed) == 0
@@ -24,7 +24,7 @@ pub extern "system" fn DllCanUnloadNow() -> HRESULT {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn DllGetClassObject(
     rclsid: *const GUID,
     riid: *const GUID,
