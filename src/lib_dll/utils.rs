@@ -24,27 +24,35 @@ pub(super) fn to_wide_null(value: &str) -> Vec<u16> {
 }
 
 pub unsafe fn get_dll_directory() -> Option<PathBuf> {
-    let module_name = to_wide_null("nanai_shiftjis_reader.dll");
-    let module = unsafe { GetModuleHandleW(PCWSTR(module_name.as_ptr())) }.ok()?;
-    if module.is_invalid() {
-        return None;
+    let module_names = ["nanai_shiftjis_reader.dll", "nanai-shiftjis-reader.dll"];
+    for name in module_names {
+        let module_name = to_wide_null(name);
+        if let Ok(module) = unsafe { GetModuleHandleW(PCWSTR(module_name.as_ptr())) } {
+            if !module.is_invalid() {
+                let mut buffer = vec![0u16; 260];
+                let len = unsafe { GetModuleFileNameW(Some(module), &mut buffer) };
+                if len != 0 {
+                    buffer.truncate(len as usize);
+                    return Some(PathBuf::from(std::ffi::OsString::from_wide(&buffer)));
+                }
+            }
+        }
     }
-
-    let mut buffer = vec![0u16; 260];
-    let len = unsafe { GetModuleFileNameW(Some(module), &mut buffer) };
-    if len == 0 {
-        return None;
-    }
-    buffer.truncate(len as usize);
-    Some(PathBuf::from(std::ffi::OsString::from_wide(&buffer)))
+    None
 }
 
 pub unsafe fn app_executable_path() -> Option<Vec<u16>> {
     let mut path = unsafe { get_dll_directory()? };
-    path.set_file_name("nanai-shiftjis-reader.exe");
-    let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
-    wide.push(0);
-    Some(wide)
+    let candidates = ["nanai-shiftjis-reader.exe", "nanai_shiftjis_reader.exe"];
+    for exe_name in candidates {
+        path.set_file_name(exe_name);
+        if path.exists() {
+            let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
+            wide.push(0);
+            return Some(wide);
+        }
+    }
+    None
 }
 
 pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<Vec<u16>> {
