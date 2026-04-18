@@ -16,7 +16,7 @@ pub fn file_process() -> String {
     };
 
     if decoded.trim().is_empty() {
-        String::from("ノンコンテンツ")
+        String::from("None content")
     } else {
         decoded
     }
