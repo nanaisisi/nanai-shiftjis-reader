@@ -24,7 +24,11 @@ pub(super) fn to_wide_null(value: &str) -> Vec<u16> {
 }
 
 pub unsafe fn get_dll_directory() -> Option<PathBuf> {
-    let module_names = ["nanai_shiftjis_reader.dll", "nanai-shiftjis-reader.dll"];
+    let module_names = [
+        "nanai_shiftjis_reader_dll.dll",
+        "nanai_shiftjis_reader.dll",
+        "nanai-shiftjis-reader.dll",
+    ];
     for name in module_names {
         let module_name = to_wide_null(name);
         if let Ok(module) = unsafe { GetModuleHandleW(PCWSTR(module_name.as_ptr())) } {
@@ -61,7 +65,15 @@ pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<Vec<u1
     }
 
     let raw_unknown = unsafe { windows::core::IUnknown::from_raw(psiitemarray as *mut _) };
-    let item_array: IShellItemArray = raw_unknown.cast().ok()?;
+    let item_array: IShellItemArray = match raw_unknown.cast() {
+        Ok(array) => array,
+        Err(_) => {
+            std::mem::forget(raw_unknown);
+            return None;
+        }
+    };
+    std::mem::forget(raw_unknown);
+
     let item_count = unsafe { item_array.GetCount().ok()? };
     if item_count == 0 {
         return None;

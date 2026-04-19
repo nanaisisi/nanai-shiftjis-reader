@@ -45,6 +45,7 @@ pub extern "system" fn DllGetClassObject(
             *ppv = factory as *mut c_void;
             S_OK
         } else {
+            GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
             std::sync::atomic::fence(Ordering::Acquire);
             drop(Box::from_raw(
                 factory as *mut super::class_factory::ExplorerClassFactoryObject,
