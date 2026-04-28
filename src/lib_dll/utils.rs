@@ -104,7 +104,16 @@ pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<Vec<u1
 
 pub unsafe fn launch_with_viewer(exe_path: &[u16], file_path: &[u16]) -> bool {
     let exe_pcw = PCWSTR(exe_path.as_ptr());
-    let params = PCWSTR(file_path.as_ptr());
+
+    let path_len = file_path
+        .iter()
+        .position(|&c| c == 0)
+        .unwrap_or(file_path.len());
+    let file_path_str = String::from_utf16_lossy(&file_path[..path_len]);
+    let quoted = format!("\"{}\"", file_path_str);
+    let params_wide: Vec<u16> = OsStr::new(&quoted).encode_wide().chain(Some(0)).collect();
+    let params = PCWSTR(params_wide.as_ptr());
+
     let result = unsafe {
         ShellExecuteW(
             None,
