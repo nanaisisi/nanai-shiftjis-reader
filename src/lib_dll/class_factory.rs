@@ -12,12 +12,16 @@ use windows::{
 use super::GLOBAL_OBJECT_COUNT;
 use super::explorer_command::create_explorer_command;
 
+/// `IClassFactory` を実装するCOMクラスファクトリオブジェクト。
+/// `ExplorerCommandObject` の生成を担当する。
 #[repr(C)]
 pub(super) struct ExplorerClassFactoryObject {
     lp_vtbl: *const IClassFactory_Vtbl,
     ref_count: AtomicU32,
 }
 
+/// `IUnknown::QueryInterface` の実装。
+/// `IClassFactory` または `IUnknown` のみをサポートし、それ以外は `E_NOINTERFACE` を返す。
 unsafe extern "system" fn class_factory_query_interface(
     this: *mut c_void,
     riid: *const windows::core::GUID,
@@ -46,11 +50,13 @@ unsafe extern "system" fn class_factory_query_interface(
     }
 }
 
+/// `IUnknown::AddRef` の実装。参照カウントをインクリメントして新しい値を返す。
 unsafe extern "system" fn class_factory_add_ref(this: *mut c_void) -> u32 {
     let object = this as *mut ExplorerClassFactoryObject;
     unsafe { (*object).ref_count.fetch_add(1, Ordering::Relaxed) + 1 }
 }
 
+/// `IUnknown::Release` の実装。参照カウントをデクリメントし、ゼロになった場合にオブジェクトを解放する。
 unsafe extern "system" fn class_factory_release(this: *mut c_void) -> u32 {
     let object = this as *mut ExplorerClassFactoryObject;
     let count = unsafe { (*object).ref_count.fetch_sub(1, Ordering::Release) - 1 };
@@ -64,6 +70,8 @@ unsafe extern "system" fn class_factory_release(this: *mut c_void) -> u32 {
     count
 }
 
+/// `IClassFactory::CreateInstance` の実装。
+/// アグリゲーションは非対応。`IExplorerCommand` または `IUnknown` のみを返す。
 unsafe extern "system" fn class_factory_create_instance(
     _this: *mut c_void,
     punkouter: *mut c_void,
@@ -97,6 +105,8 @@ unsafe extern "system" fn class_factory_create_instance(
     }
 }
 
+/// `IClassFactory::LockServer` の実装。
+/// ロックカウントを増減し、DLLのアンロードを制御する。
 unsafe extern "system" fn class_factory_lock_server(
     _this: *mut c_void,
     flock: windows::core::BOOL,
@@ -109,6 +119,7 @@ unsafe extern "system" fn class_factory_lock_server(
     S_OK
 }
 
+/// `IClassFactory` の静的vtable。各関数ポインタを上記の実装関数に設定する。
 static CLASS_FACTORY_VTBL: IClassFactory_Vtbl = IClassFactory_Vtbl {
     base__: IUnknown_Vtbl {
         QueryInterface: class_factory_query_interface,
@@ -119,6 +130,8 @@ static CLASS_FACTORY_VTBL: IClassFactory_Vtbl = IClassFactory_Vtbl {
     LockServer: class_factory_lock_server,
 };
 
+/// `ExplorerClassFactoryObject` をヒープに確保してvoidポインタとして返す。
+/// 参照カウントは1で初期化され、`GLOBAL_OBJECT_COUNT` をインクリメントする。
 pub(super) unsafe fn create_class_factory() -> *mut std::ffi::c_void {
     GLOBAL_OBJECT_COUNT.fetch_add(1, Ordering::Relaxed);
     Box::into_raw(Box::new(ExplorerClassFactoryObject {

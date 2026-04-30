@@ -18,12 +18,16 @@ use windows::{
     core::{IUnknown, IUnknown_Vtbl, Interface, PWSTR},
 };
 
+/// Windows Explorer のコンテキストメニューコマンドを実装するCOMオブジェクト。
+/// `IExplorerCommand` インターフェースを手動vtableで実装している。
 #[repr(C)]
 pub(super) struct ExplorerCommandObject {
     lp_vtbl: *const IExplorerCommand_Vtbl,
     ref_count: AtomicU32,
 }
 
+/// `IUnknown::QueryInterface` の実装。
+/// `IExplorerCommand` または `IUnknown` のみをサポートし、それ以外は `E_NOINTERFACE` を返す。
 unsafe extern "system" fn explorer_command_query_interface(
     this: *mut c_void,
     riid: *const windows::core::GUID,
@@ -52,11 +56,13 @@ unsafe extern "system" fn explorer_command_query_interface(
     }
 }
 
+/// `IUnknown::AddRef` の実装。参照カウントをインクリメントして新しい値を返す。
 unsafe extern "system" fn explorer_command_add_ref(this: *mut c_void) -> u32 {
     let object = this as *mut ExplorerCommandObject;
     unsafe { (*object).ref_count.fetch_add(1, Ordering::Relaxed) + 1 }
 }
 
+/// `IUnknown::Release` の実装。参照カウントをデクリメントし、ゼロになった場合にオブジェクトを解放する。
 unsafe extern "system" fn explorer_command_release(this: *mut c_void) -> u32 {
     let object = this as *mut ExplorerCommandObject;
     let count = unsafe { (*object).ref_count.fetch_sub(1, Ordering::Release) - 1 };
@@ -70,6 +76,7 @@ unsafe extern "system" fn explorer_command_release(this: *mut c_void) -> u32 {
     count
 }
 
+/// `IExplorerCommand::GetTitle` の実装。メニューに表示するコマンド名を返す。
 unsafe extern "system" fn explorer_command_get_title(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -89,6 +96,7 @@ unsafe extern "system" fn explorer_command_get_title(
     }
 }
 
+/// `IExplorerCommand::GetIcon` の実装。アイコンは未実装のため `E_NOTIMPL` を返す。
 unsafe extern "system" fn explorer_command_get_icon(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -103,6 +111,7 @@ unsafe extern "system" fn explorer_command_get_icon(
     E_NOTIMPL
 }
 
+/// `IExplorerCommand::GetToolTip` の実装。ツールチップ文字列を返す。
 unsafe extern "system" fn explorer_command_get_tooltip(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -122,6 +131,7 @@ unsafe extern "system" fn explorer_command_get_tooltip(
     }
 }
 
+/// `IExplorerCommand::GetCanonicalName` の実装。このコマンドのCLSIDを返す。
 unsafe extern "system" fn explorer_command_get_canonical_name(
     _this: *mut c_void,
     pguid: *mut windows::core::GUID,
@@ -135,6 +145,7 @@ unsafe extern "system" fn explorer_command_get_canonical_name(
     S_OK
 }
 
+/// `IExplorerCommand::GetState` の実装。コマンドを常に有効（有効状態 = 0）として返す。
 unsafe extern "system" fn explorer_command_get_state(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -150,6 +161,8 @@ unsafe extern "system" fn explorer_command_get_state(
     S_OK
 }
 
+/// `IExplorerCommand::Invoke` の実装。
+/// 選択されたファイルのパスを取得し、ビューアアプリを起動する。
 unsafe extern "system" fn explorer_command_invoke(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -169,6 +182,7 @@ unsafe extern "system" fn explorer_command_invoke(
     S_OK
 }
 
+/// `IExplorerCommand::GetFlags` の実装。フラグは設定しない（0を返す）。
 unsafe extern "system" fn explorer_command_get_flags(
     _this: *mut c_void,
     pflags: *mut u32,
@@ -182,6 +196,7 @@ unsafe extern "system" fn explorer_command_get_flags(
     S_OK
 }
 
+/// `IExplorerCommand::EnumSubCommands` の実装。サブコマンドは持たないため `E_NOTIMPL` を返す。
 unsafe extern "system" fn explorer_command_enum_sub_commands(
     _this: *mut c_void,
     ppenum: *mut *mut c_void,
@@ -195,6 +210,7 @@ unsafe extern "system" fn explorer_command_enum_sub_commands(
     E_NOTIMPL
 }
 
+/// `IExplorerCommand` の静的vtable。各関数ポインタを上記の実装関数に設定する。
 static EXPLORER_COMMAND_VTBL: IExplorerCommand_Vtbl = IExplorerCommand_Vtbl {
     base__: IUnknown_Vtbl {
         QueryInterface: explorer_command_query_interface,
@@ -211,6 +227,8 @@ static EXPLORER_COMMAND_VTBL: IExplorerCommand_Vtbl = IExplorerCommand_Vtbl {
     EnumSubCommands: explorer_command_enum_sub_commands,
 };
 
+/// `ExplorerCommandObject` をヒープに確保してvoidポインタとして返す。
+/// 参照カウントは1で初期化され、`GLOBAL_OBJECT_COUNT` をインクリメントする。
 pub(super) unsafe fn create_explorer_command() -> *mut std::ffi::c_void {
     GLOBAL_OBJECT_COUNT.fetch_add(1, Ordering::Relaxed);
     Box::into_raw(Box::new(ExplorerCommandObject {

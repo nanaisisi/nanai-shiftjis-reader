@@ -13,6 +13,8 @@ use windows::{
     core::{GUID, HRESULT, Interface},
 };
 
+/// DLLがアンロード可能かどうかをCOMランタイムに通知する。
+/// オブジェクト数とロック数が両方ゼロのときのみ `S_OK` を返してアンロードを許可する。
 #[unsafe(no_mangle)]
 pub extern "system" fn DllCanUnloadNow() -> HRESULT {
     if GLOBAL_OBJECT_COUNT.load(Ordering::Relaxed) == 0
@@ -24,6 +26,10 @@ pub extern "system" fn DllCanUnloadNow() -> HRESULT {
     }
 }
 
+/// 指定されたCLSIDに対応するクラスファクトリオブジェクトを取得するCOMエクスポート関数。
+/// `CLSID_EXPLORER_COMMAND` 以外のCLSIDには `CLASS_E_CLASSNOTAVAILABLE` を返す。
+/// 要求されたインターフェース（`IClassFactory` または `IUnknown`）が一致しない場合は
+/// `E_NOINTERFACE` を返し、作成したファクトリオブジェクトを破棄する。
 #[unsafe(no_mangle)]
 pub extern "system" fn DllGetClassObject(
     rclsid: *const GUID,
