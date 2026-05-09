@@ -52,7 +52,8 @@
         <com:Extension Category="windows.comServer">
           <com:ComServer>
             <com:SurrogateServer DisplayName="ContextMenuShiftJIS">
-              <com:Class Id="13C09516-2403-4688-9CF2-2C9C41F338BF" Path="nanai_shiftjis_reader.dll"
+              <com:Class Id="13C09516-2403-4688-9CF2-2C9C41F338BF"
+                Path="nanai_shiftjis_reader_dll.dll"
                 ThreadingModel="STA" />
             </com:SurrogateServer>
           </com:ComServer>
