@@ -1,8 +1,16 @@
 [package]
 name = "nanai-shiftjis-reader"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[workspace]
+members = ["nanai-shiftjis-reader-dll"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-license = "MIT // Apache-2.0"
+license = "MIT OR MIT AND Apache-2.0"
 
 [profile.release]
 lto = true

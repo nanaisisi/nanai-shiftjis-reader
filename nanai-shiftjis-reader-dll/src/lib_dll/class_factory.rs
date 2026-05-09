@@ -96,9 +96,7 @@ unsafe extern "system" fn class_factory_create_instance(
     let iid = unsafe { &*riid };
 
     if *iid == IExplorerCommand::IID || *iid == IUnknown::IID {
-        unsafe {
-            *ppvobject = command as *mut c_void;
-        }
+        unsafe { *ppvobject = command }
         S_OK
     } else {
         GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);

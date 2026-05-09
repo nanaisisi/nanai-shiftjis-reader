@@ -2,9 +2,7 @@
 
 use super::GLOBAL_OBJECT_COUNT;
 use super::class_ids::CLSID_EXPLORER_COMMAND;
-use super::utils::{
-    allocate_pwstr, app_executable_path, get_selected_file_path, launch_with_viewer,
-};
+use super::utils::{allocate_pwstr, get_selected_file_path};
 use std::{
     ffi::c_void,
     ptr,
@@ -168,16 +166,10 @@ unsafe extern "system" fn explorer_command_invoke(
     _psiitemarray: *mut c_void,
     _pbc: *mut c_void,
 ) -> windows::core::HRESULT {
-    let file_path = match unsafe { get_selected_file_path(_psiitemarray) } {
+    match unsafe { get_selected_file_path(_psiitemarray) } {
         Some(path) => path,
         None => return S_OK,
     };
-
-    if let Some(exe_path) = unsafe { app_executable_path() } {
-        if unsafe { launch_with_viewer(&exe_path, &file_path) } {
-            return S_OK;
-        }
-    }
 
     S_OK
 }

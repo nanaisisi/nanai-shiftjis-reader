@@ -3,32 +3,16 @@
 use std::{
     ffi::{OsStr, c_void},
     os::windows::prelude::{OsStrExt, OsStringExt},
-    path::PathBuf,
     ptr,
 };
 use windows::{
     Win32::{
         Foundation::E_OUTOFMEMORY,
-        System::{
-            Com::{CoTaskMemAlloc, CoTaskMemFree},
-            LibraryLoader::{GetModuleFileNameW, GetModuleHandleW},
-        },
-        UI::Shell::{IShellItemArray, SIGDN_FILESYSPATH, ShellExecuteW},
-        UI::WindowsAndMessaging::SW_SHOW,
+        System::Com::{CoTaskMemAlloc, CoTaskMemFree},
+        UI::Shell::{IShellItemArray, SIGDN_FILESYSPATH},
     },
-    core::{Interface, PCWSTR, PWSTR},
+    core::{Interface, PWSTR},
 };
-
-/// 文字列をnull終端のUTF-16ワイド文字列に変換する。
-pub(super) fn to_wide_null(value: &str) -> Vec<u16> {
-    OsStr::new(value).encode_wide().chain(Some(0)).collect()
-}
-
-/// 現在のDLLモジュールのディレクトリパスを取得する。
-pub unsafe fn get_dll_directory() -> Option<PathBuf> {
-    let module_names = "nanai_shiftjis_reader_dll.dll";
-    None
-}
 
 /// Explorer で選択されているファイルのパスをワイド文字列で取得する。
 /// `psiitemarray` が `null` または空の場合は `None` を返す。
@@ -77,34 +61,6 @@ pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<Vec<u1
     let mut wide_path: Vec<u16> = path.encode_wide().collect();
     wide_path.push(0);
     Some(wide_path)
-}
-
-/// 指定された実行ファイルでファイルを開く。
-/// `ShellExecuteW` を使ってビューアアプリを起動し、成功した場合は `true` を返す。
-pub unsafe fn launch_with_viewer(exe_path: &[u16], file_path: &[u16]) -> bool {
-    let exe_pcw = PCWSTR(exe_path.as_ptr());
-
-    let path_len = file_path
-        .iter()
-        .position(|&c| c == 0)
-        .unwrap_or(file_path.len());
-    let file_path_str = String::from_utf16_lossy(&file_path[..path_len]);
-    // ファイルパスをダブルクォートで囲んでコマンドライン引数として渡す
-    let quoted = format!("\"{}\"", file_path_str);
-    let params_wide: Vec<u16> = OsStr::new(&quoted).encode_wide().chain(Some(0)).collect();
-    let params = PCWSTR(params_wide.as_ptr());
-
-    let result = unsafe {
-        ShellExecuteW(
-            None,
-            PCWSTR(ptr::null()),
-            exe_pcw,
-            params,
-            PCWSTR(ptr::null()),
-            SW_SHOW,
-        )
-    };
-    (result.0 as isize) > 32
 }
 
 /// UTF-8文字列をCOMタスクメモリにコピーしたワイド文字列（`PWSTR`）として返す。
