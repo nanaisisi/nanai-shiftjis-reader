@@ -9,5 +9,5 @@ devcert.pfx
 nanai-shiftjis-reader.msix
 Assets/
 nanai-shiftjis-reader.exe
-nanai_shiftjis_reader.dll
+nanai_shiftjis_reader_dll.dll
 dist/

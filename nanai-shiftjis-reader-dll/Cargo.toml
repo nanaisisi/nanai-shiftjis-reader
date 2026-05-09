@@ -4,4 +4,20 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT // Apache-2.0"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
+encoding_rs = { version = "0.8" }
+gpui = "0.2"
+windows = { version = "0.62", features = [
+    "Foundation",
+    "ApplicationModel",
+    "Win32",
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+windows-core = { version = "0.62", default-features = false }

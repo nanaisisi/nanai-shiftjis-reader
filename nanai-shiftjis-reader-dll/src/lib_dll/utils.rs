@@ -16,7 +16,7 @@ use windows::{
         UI::Shell::{IShellItemArray, SIGDN_FILESYSPATH, ShellExecuteW},
         UI::WindowsAndMessaging::SW_SHOW,
     },
-    core::{GUID, Interface, PCWSTR, PWSTR},
+    core::{Interface, PCWSTR, PWSTR},
 };
 
 /// 文字列をnull終端のUTF-16ワイド文字列に変換する。
@@ -25,42 +25,8 @@ pub(super) fn to_wide_null(value: &str) -> Vec<u16> {
 }
 
 /// 現在のDLLモジュールのディレクトリパスを取得する。
-/// 複数の候補ファイル名でモジュールハンドルを検索し、最初に見つかったものを返す。
 pub unsafe fn get_dll_directory() -> Option<PathBuf> {
-    let module_names = [
-        "nanai_shiftjis_reader_dll.dll",
-        "nanai_shiftjis_reader.dll",
-        "nanai-shiftjis-reader.dll",
-    ];
-    for name in module_names {
-        let module_name = to_wide_null(name);
-        if let Ok(module) = unsafe { GetModuleHandleW(PCWSTR(module_name.as_ptr())) } {
-            if !module.is_invalid() {
-                let mut buffer = vec![0u16; 260];
-                let len = unsafe { GetModuleFileNameW(Some(module), &mut buffer) };
-                if len != 0 {
-                    buffer.truncate(len as usize);
-                    return Some(PathBuf::from(std::ffi::OsString::from_wide(&buffer)));
-                }
-            }
-        }
-    }
-    None
-}
-
-/// DLLと同じディレクトリにあるビューア実行ファイルのパスをワイド文字列で返す。
-/// 候補のファイル名を順に検索し、存在する最初のものを返す。
-pub unsafe fn app_executable_path() -> Option<Vec<u16>> {
-    let mut path = unsafe { get_dll_directory()? };
-    let candidates = ["nanai-shiftjis-reader.exe", "nanai_shiftjis_reader.exe"];
-    for exe_name in candidates {
-        path.set_file_name(exe_name);
-        if path.exists() {
-            let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
-            wide.push(0);
-            return Some(wide);
-        }
-    }
+    let module_names = "nanai_shiftjis_reader_dll.dll";
     None
 }
 

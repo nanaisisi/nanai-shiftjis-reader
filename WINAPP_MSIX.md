@@ -38,6 +38,7 @@ cargo build --release
 ```powershell
 mkdir dist
 copy .\target\release\nanai-shiftjis-reader.exe .\dist\
+copy .\nanai-shiftjis-reader-dll\target\release\nanai_shiftjis_reader_dll.dll .\dist\
 ```
 
 3. 開発用証明書を生成します。

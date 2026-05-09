@@ -25,7 +25,7 @@ impl Render for ReadText {
             .border_color(rgb(0x0000ff)) // 枠線の色：青
             .text_xl()
             .text_color(rgb(0xffffff))   // 文字色：白
-            .child(format!("{}!", &self.text))
+            .child(format!("{}!", self.text))
             .child(div().flex().gap_2())
             .id("vertical")
             .overflow_scroll()

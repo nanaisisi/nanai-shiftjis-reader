@@ -1,4 +1,3 @@
-use encoding_rs;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -31,7 +30,7 @@ pub fn file_process() -> String {
                 let (res, _, _) = encoding_rs::SHIFT_JIS.decode(&input_file);
                 res.into_owned()
             }
-            Err(why) => String::from(format!("couldn't open {}: {}", path.display(), why)),
+            Err(why) => format!("couldn't open {}: {}", path.display(), why),
         }
     } else {
         String::new()

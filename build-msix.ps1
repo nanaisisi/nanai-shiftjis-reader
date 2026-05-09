@@ -35,6 +35,7 @@ try {
     $exeName = 'nanai-shiftjis-reader.exe'
     $debugPath = Join-Path $projectRoot 'target\debug\' $exeName
     $releasePath = Join-Path $projectRoot 'target\release\' $exeName
+    $releaseDllPath = Join-Path $projectRoot 'nanai-shiftjis-reader-dll\target\release\nanai_shiftjis_reader_dll.dll'
     $distDir = Join-Path $projectRoot 'dist'
     $certPath = Join-Path $projectRoot 'devcert.pfx'
     $msixName = 'nanai-shiftjis-reader.msix'
@@ -55,10 +56,13 @@ try {
         if (-not $SkipBuild) {
             Write-Host 'Building release binary...' -ForegroundColor Cyan
             cargo build --release
+            Write-Host 'Building DLL crate release binary...' -ForegroundColor Cyan
+            cargo build --release --manifest-path .\nanai-shiftjis-reader-dll\Cargo.toml
         }
         if (-not (Test-Path $releasePath)) {
             throw "Release binary not found: $releasePath"
         }
+    }
     }
 
     function Create-DebugIdentity {
@@ -76,7 +80,9 @@ try {
             New-Item -ItemType Directory -Path $distDir | Out-Null
         }
         Copy-Item -Path $releasePath -Destination $distDir -Force
-        Copy-Item -Path (Join-Path $projectRoot 'target\release\nanai_shiftjis_reader.dll') -Destination $distDir -Force
+        if (Test-Path $releaseDllPath) {
+            Copy-Item -Path $releaseDllPath -Destination $distDir -Force
+        }
         Copy-Item -Path $projectRoot\appxmanifest.xml -Destination $distDir -Force
         if (Test-Path (Join-Path $projectRoot 'Assets')) {
             Copy-Item -Path (Join-Path $projectRoot 'Assets') -Destination $distDir -Recurse -Force
@@ -135,7 +141,6 @@ try {
             }
         }
     }
-}
 finally {
     Pop-Location
 }
