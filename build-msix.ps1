@@ -35,7 +35,7 @@ try {
     $exeName = 'nanai-shiftjis-reader.exe'
     $debugPath = Join-Path $projectRoot 'target\debug\' $exeName
     $releasePath = Join-Path $projectRoot 'target\release\' $exeName
-    $releaseDllPath = Join-Path $projectRoot 'nanai-shiftjis-reader-dll\target\release\nanai_shiftjis_reader_dll.dll'
+    $releaseDllPath = Join-Path $projectRoot 'target\release\nanai_shiftjis_reader_dll.dll'
     $distDir = Join-Path $projectRoot 'dist'
     $certPath = Join-Path $projectRoot 'devcert.pfx'
     $msixName = 'nanai-shiftjis-reader.msix'
@@ -63,19 +63,18 @@ try {
             throw "Release binary not found: $releasePath"
         }
     }
-    }
 
-    function Create-DebugIdentity {
+    function New-DebugIdentity {
         Write-Host 'Creating debug identity...' -ForegroundColor Cyan
         winapp create-debug-identity $debugPath
     }
 
-    function Run-DebugBinary {
+    function Start-DebugBinary {
         Write-Host 'Running debug binary...' -ForegroundColor Cyan
         & $debugPath
     }
 
-    function Prepare-Dist {
+    function New-Dist {
         if (-not (Test-Path $distDir)) {
             New-Item -ItemType Directory -Path $distDir | Out-Null
         }
@@ -89,7 +88,7 @@ try {
         }
     }
 
-    function Generate-Cert {
+    function New-Cert {
         Write-Host 'Generating development certificate...' -ForegroundColor Cyan
         winapp cert generate --if-exists skip
         if (-not (Test-Path $certPath)) {
@@ -97,7 +96,7 @@ try {
         }
     }
 
-    function Pack-Msix {
+    function New-MsixPackage {
         Write-Host 'Packing MSIX...' -ForegroundColor Cyan
         winapp package $distDir --manifest (Join-Path $distDir 'appxmanifest.xml') --output $msixPath --cert $certPath
         if (-not (Test-Path $msixPath)) {
@@ -123,15 +122,15 @@ try {
     switch ($Mode) {
         'Debug' {
             Build-Debug
-            Create-DebugIdentity
-            Run-DebugBinary
+            New-DebugIdentity
+            Start-DebugBinary
         }
         'Package' {
             Build-Release
-            Prepare-Dist
-            Generate-Cert
+            New-Dist
+            New-Cert
             if (-not $SkipPack) {
-                Pack-Msix
+                New-MsixPackage
             }
             if (-not $SkipCertInstall) {
                 Install-Cert
@@ -141,6 +140,7 @@ try {
             }
         }
     }
+}
 finally {
     Pop-Location
 }
