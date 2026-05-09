@@ -30,8 +30,14 @@ pub extern "system" fn DllCanUnloadNow() -> HRESULT {
 /// `CLSID_EXPLORER_COMMAND` 以外のCLSIDには `CLASS_E_CLASSNOTAVAILABLE` を返す。
 /// 要求されたインターフェース（`IClassFactory` または `IUnknown`）が一致しない場合は
 /// `E_NOINTERFACE` を返し、作成したファクトリオブジェクトを破棄する。
+///
+/// # Safety
+///
+/// The caller must ensure that `rclsid`, `riid`, and `ppv` are valid, non-null pointers.
+/// Dereferencing and writing through these raw pointers is only safe when the provided
+/// pointer values are valid COM arguments from the caller.
 #[unsafe(no_mangle)]
-pub extern "system" fn DllGetClassObject(
+pub unsafe extern "system" fn DllGetClassObject(
     rclsid: *const GUID,
     riid: *const GUID,
     ppv: *mut *mut c_void,
