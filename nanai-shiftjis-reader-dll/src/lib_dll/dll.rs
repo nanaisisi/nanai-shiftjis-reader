@@ -48,7 +48,7 @@ pub extern "system" fn DllGetClassObject(
         let factory = create_class_factory();
         let iid = &*riid;
         if *iid == IClassFactory::IID || *iid == windows::core::IUnknown::IID {
-            *ppv = factory as *mut c_void;
+            *ppv = factory;
             S_OK
         } else {
             GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
