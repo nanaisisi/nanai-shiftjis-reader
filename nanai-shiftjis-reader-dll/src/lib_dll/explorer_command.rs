@@ -1,7 +1,7 @@
 #![cfg(windows)]
 
 use super::GLOBAL_OBJECT_COUNT;
-use super::class_ids::CLSID_EXPLORER_COMMAND;
+use super::guid::CLSID_EXPLORER_COMMAND;
 use super::utils::{allocate_pwstr, get_selected_file_path};
 use std::{
     ffi::c_void,

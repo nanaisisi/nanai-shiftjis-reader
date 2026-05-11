@@ -1,7 +1,7 @@
 #![cfg(windows)]
 
 use super::class_factory::create_class_factory;
-use super::class_ids::CLSID_EXPLORER_COMMAND;
+use super::guid::CLSID_EXPLORER_COMMAND;
 use super::{GLOBAL_LOCK_COUNT, GLOBAL_OBJECT_COUNT};
 use std::ffi::c_void;
 use std::sync::atomic::Ordering;
