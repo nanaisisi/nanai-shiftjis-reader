@@ -19,3 +19,4 @@ windows = { version = "0.62", features = [
     "Win32_UI_WindowsAndMessaging",
 ] }
 windows-core = { version = "0.62", default-features = false }
+thiserror = "2"

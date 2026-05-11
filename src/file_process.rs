@@ -2,6 +2,8 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
+
 /// パス文字列の先頭と末尾にあるクォート文字（`"` または `'`）を取り除く。
 /// Windowsのドラッグ&ドロップ等でパスがクォートで囲まれて渡される場合に対応する。
 fn strip_quotes(path: &str) -> &str {
@@ -19,27 +21,21 @@ fn strip_quotes(path: &str) -> &str {
 
 /// コマンドライン引数からファイルパスを取得し、Shift_JISとしてデコードしたUTF-8文字列を返す。
 /// 引数が指定されていない場合やファイル内容が空の場合は `"None content"` を返す。
-pub fn file_process() -> String {
-    // 第1引数をファイルパスとして使用する
+pub fn file_process() -> Result<String> {
     let maybe_path = env::args().nth(1);
     let decoded = if let Some(path_str) = maybe_path {
         let path = PathBuf::from(strip_quotes(&path_str));
-        match fs::read(&path) {
-            Ok(input_file) => {
-                // Shift_JISバイト列をUTF-8文字列にデコードする
-                let (res, _, _) = encoding_rs::SHIFT_JIS.decode(&input_file);
-                res.into_owned()
-            }
-            Err(why) => format!("couldn't open {}: {}", path.display(), why),
-        }
+        let input_file =
+            fs::read(&path).with_context(|| format!("couldn't open {}", path.display()))?;
+        let (res, _, _) = encoding_rs::SHIFT_JIS.decode(&input_file);
+        res.into_owned()
     } else {
         String::new()
     };
 
-    // デコード結果が空白のみの場合はプレースホルダー文字列を返す
     if decoded.trim().is_empty() {
-        String::from("None content")
+        Ok(String::from("None content"))
     } else {
-        decoded
+        Ok(decoded)
     }
 }

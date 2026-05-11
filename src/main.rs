@@ -18,7 +18,7 @@ fn main() {
     }
 
     // コマンドライン引数で指定されたファイルをShift_JISとして読み込み、UTF-8にデコードする
-    let decoded_text = file_process::file_process();
+    let decoded_text = file_process::file_process().unwrap_or_else(|err| err.to_string());
     // デコードされたテキストをGUIウィンドウで表示する
     ui::ui(decoded_text);
 }
