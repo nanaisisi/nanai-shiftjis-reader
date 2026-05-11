@@ -22,5 +22,6 @@ strip = "symbols"
 [dependencies]
 anyhow = "1.0.102"
 encoding_rs = { version = "0.8" }
+compio = { version = "0.18.0", features = ["fs", "runtime", "process"] }
 gpui = "0.2"
 windows = { version = "0.62", features = ["ApplicationModel"] }

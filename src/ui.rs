@@ -9,14 +9,14 @@ struct ReadText {
 }
 
 impl Render for ReadText {
-    /// テキストをスクロール可能な縦並びレイアウトで描画する
+    /// テキストをスクロール可能な領域に描画する
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .flex()
             .flex_col()
             .gap_3()
             .p(px(16.0))
-            .bg(rgb(0x505050))          // 背景色：ダークグレー
+            .bg(rgb(0x505050)) // 背景色：ダークグレー
             .size(px(500.0))
             .justify_start()
             .items_start()
@@ -24,7 +24,7 @@ impl Render for ReadText {
             .border_1()
             .border_color(rgb(0x0000ff)) // 枠線の色：青
             .text_xl()
-            .text_color(rgb(0xffffff))   // 文字色：白
+            .text_color(rgb(0xffffff)) // 文字色：白
             .child(format!("{}!", self.text))
             .child(div().flex().gap_2())
             .id("vertical")
@@ -43,7 +43,8 @@ pub fn ui(decoded_text: String) {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 ..Default::default()
             },
-            |_, cx| {
+            |window, cx| {
+                window.set_window_title("Shift_JIS Viewer");
                 cx.new(|_| ReadText {
                     text: decoded_text.into(),
                 })
