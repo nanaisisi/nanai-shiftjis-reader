@@ -12,8 +12,6 @@ impl Render for ReadText {
     /// テキストをスクロール可能な領域に描画する
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div()
-            .flex()
-            .flex_col()
             .gap_3()
             .p(px(16.0))
             .bg(rgb(0x505050)) // 背景色：ダークグレー
@@ -37,10 +35,11 @@ impl Render for ReadText {
 pub fn ui(decoded_text: String) {
     Application::new().run(|cx: &mut App| {
         // ウィンドウの初期位置とサイズを設定する
-        let bounds = Bounds::new(point(px(100.), px(100.)), size(px(500.), px(500.0)));
+        let bounds = Bounds::new(point(px(300.0), px(300.0)), size(px(1000.0), px(500.0)));
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
+                show: true,
                 ..Default::default()
             },
             |window, cx| {
