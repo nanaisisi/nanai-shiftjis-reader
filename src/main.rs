@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 // Shift_JIS テキストビューアのエントリーポイント。
 // MSIXパッケージ状態を確認した後、ファイルをデコードしてGUIを起動する。
 mod file_process;

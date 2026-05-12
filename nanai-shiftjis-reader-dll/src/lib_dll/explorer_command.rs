@@ -2,7 +2,7 @@
 
 use super::GLOBAL_OBJECT_COUNT;
 use super::guid::CLSID_EXPLORER_COMMAND;
-use super::utils::{allocate_pwstr, get_selected_file_path};
+use super::utils::{allocate_pwstr, get_selected_file_paths};
 use std::{
     ffi::c_void,
     path::PathBuf,
@@ -89,7 +89,7 @@ unsafe extern "system" fn explorer_command_get_title(
         return E_POINTER;
     }
 
-    match allocate_pwstr("nanai-txt-viewer") {
+    match allocate_pwstr("Open with nanai-shiftjis-reader") {
         Ok(ptr) => {
             unsafe {
                 *ppszname = ptr;
@@ -101,7 +101,7 @@ unsafe extern "system" fn explorer_command_get_title(
 }
 
 /// `IExplorerCommand::GetIcon` の実装。
-/// アイコンを返す機能は実装しておらず、`E_NOTIMPL` を返す。
+/// パッケージ内実行ファイルのアイコンを返す。
 unsafe extern "system" fn explorer_command_get_icon(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -109,6 +109,18 @@ unsafe extern "system" fn explorer_command_get_icon(
 ) -> windows::core::HRESULT {
     if ppszicon.is_null() {
         return E_POINTER;
+    }
+
+    if let Some(icon_spec) = get_viewer_icon_spec() {
+        match allocate_pwstr(&icon_spec) {
+            Ok(ptr) => {
+                unsafe {
+                    *ppszicon = ptr;
+                }
+                return S_OK;
+            }
+            Err(err) => return err.code(),
+        }
     }
 
     unsafe {
@@ -183,16 +195,21 @@ fn get_viewer_executable_path() -> Option<PathBuf> {
     exe_path.exists().then_some(exe_path)
 }
 
+/// パッケージ内の実行可能ファイルのアイコン文字列を返す。
+fn get_viewer_icon_spec() -> Option<String> {
+    get_viewer_executable_path()
+        .and_then(|exe_path| exe_path.to_str().map(|path| format!("{},0", path)))
+}
+
 /// 指定パスのファイルをビューアで開く。
 /// 実行ファイルの起動に失敗した場合は `E_FAIL` を返す。
-fn invoke_viewer_for_path(path: PathBuf) -> windows::core::HRESULT {
+fn invoke_viewer_for_paths(paths: &[PathBuf]) -> windows::core::HRESULT {
     let exe_path =
         get_viewer_executable_path().unwrap_or_else(|| PathBuf::from("nanai-shiftjis-reader.exe"));
-    Command::new(exe_path)
-        .arg(path)
-        .spawn()
-        .map(|_| S_OK)
-        .unwrap_or(E_FAIL)
+    let mut command = Command::new(exe_path);
+    command.args(paths.iter().map(|path| path.as_os_str()));
+
+    command.spawn().map(|_| S_OK).unwrap_or(E_FAIL)
 }
 
 /// `IExplorerCommand::Invoke` の実装。
@@ -202,12 +219,12 @@ unsafe extern "system" fn explorer_command_invoke(
     _psiitemarray: *mut c_void,
     _pbc: *mut c_void,
 ) -> windows::core::HRESULT {
-    let path = match unsafe { get_selected_file_path(_psiitemarray) } {
-        Some(path) => path,
-        None => return S_OK,
-    };
+    let paths = unsafe { get_selected_file_paths(_psiitemarray) };
+    if paths.is_empty() {
+        return E_FAIL;
+    }
 
-    invoke_viewer_for_path(path)
+    invoke_viewer_for_paths(&paths)
 }
 
 /// `IExplorerCommand::GetFlags` の実装。

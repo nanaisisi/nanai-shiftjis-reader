@@ -14,12 +14,11 @@ use windows::{
     core::{Interface, PWSTR},
 };
 
-/// Explorer で選択されているファイルのパスを取得する。
-/// `psiitemarray` が `null` または空の場合は `None` を返す。
-/// 先頭のアイテムのファイルシステムパスを返す。
-pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<std::path::PathBuf> {
+/// Explorer で選択されているファイルのパスをすべて取得する。
+/// `psiitemarray` が `null` または空の場合は空の `Vec` を返す。
+pub unsafe fn get_selected_file_paths(psiitemarray: *mut c_void) -> Vec<std::path::PathBuf> {
     if psiitemarray.is_null() {
-        return None;
+        return Vec::new();
     }
 
     let raw_unknown = unsafe { windows::core::IUnknown::from_raw(psiitemarray as *mut _) };
@@ -27,38 +26,46 @@ pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<std::p
         Ok(array) => array,
         Err(_) => {
             std::mem::forget(raw_unknown);
-            return None;
+            return Vec::new();
         }
     };
     std::mem::forget(raw_unknown);
 
-    let item_count = unsafe { item_array.GetCount().ok()? };
-    if item_count == 0 {
-        return None;
-    }
+    let item_count = match unsafe { item_array.GetCount() } {
+        Ok(count) => count,
+        Err(_) => return Vec::new(),
+    };
 
-    // 先頭のアイテムのファイルシステムパスを取得する
-    let item = unsafe { item_array.GetItemAt(0).ok()? };
-    let psz_path = unsafe { item.GetDisplayName(SIGDN_FILESYSPATH).ok()? };
-    if psz_path.is_null() {
-        return None;
-    }
+    let mut paths = Vec::new();
+    for index in 0..item_count {
+        let item = match unsafe { item_array.GetItemAt(index) } {
+            Ok(item) => item,
+            Err(_) => continue,
+        };
 
-    // null終端までの長さを計算する
-    let mut len = 0usize;
-    unsafe {
-        while *psz_path.0.add(len) != 0 {
-            len += 1;
+        let psz_path = match unsafe { item.GetDisplayName(SIGDN_FILESYSPATH) } {
+            Ok(path) => path,
+            Err(_) => continue,
+        };
+        if psz_path.is_null() {
+            continue;
         }
-    }
-    let path =
-        unsafe { std::ffi::OsString::from_wide(std::slice::from_raw_parts(psz_path.0, len)) };
-    // COMが確保したメモリを解放する
-    unsafe {
-        CoTaskMemFree(Some(psz_path.0 as *const _));
+
+        let mut len = 0usize;
+        unsafe {
+            while *psz_path.0.add(len) != 0 {
+                len += 1;
+            }
+        }
+        let path =
+            unsafe { std::ffi::OsString::from_wide(std::slice::from_raw_parts(psz_path.0, len)) };
+        unsafe {
+            CoTaskMemFree(Some(psz_path.0 as *const _));
+        }
+        paths.push(std::path::PathBuf::from(path));
     }
 
-    Some(std::path::PathBuf::from(path))
+    paths
 }
 
 /// UTF-8文字列をCOMタスクメモリにコピーしたワイド文字列（`PWSTR`）として返す。

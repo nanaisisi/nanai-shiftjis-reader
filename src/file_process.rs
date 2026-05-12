@@ -6,20 +6,6 @@ use anyhow::{Context, Result, anyhow};
 use compio::{fs::OpenOptions, io::AsyncReadAtExt, runtime::Runtime};
 use encoding_rs::SHIFT_JIS;
 
-/// パス文字列の先頭と末尾にあるクォート文字（`"` または `'`）を取り除く。
-/// Windowsのドラッグ&ドロップ等でパスがクォートで囲まれて渡される場合に対応する。
-fn strip_quotes(path: &str) -> &str {
-    let trimmed = path.trim();
-    if trimmed.len() >= 2 {
-        let bytes = trimmed.as_bytes();
-        if (bytes[0] == b'"' && bytes[trimmed.len() - 1] == b'"')
-            || (bytes[0] == b'\'' && bytes[trimmed.len() - 1] == b'\'')
-        {
-            return &trimmed[1..trimmed.len() - 1];
-        }
-    }
-    trimmed
-}
 
 /// compio を使って一つのファイルを読み込み、Shift_JIS を UTF-8 にデコードする。
 fn read_file_with_compio(path: PathBuf) -> Result<String> {
@@ -50,10 +36,7 @@ fn read_file_with_compio(path: PathBuf) -> Result<String> {
 /// 引数が複数ある場合はすべてを並列に処理する。
 /// 引数が指定されていない場合やファイル内容が空の場合は `"None content"` を返す。
 pub fn file_process() -> Result<String> {
-    let paths: Vec<PathBuf> = env::args()
-        .skip(1)
-        .map(|arg| PathBuf::from(strip_quotes(&arg)))
-        .collect();
+    let paths: Vec<PathBuf> = env::args_os().skip(1).map(PathBuf::from).collect();
 
     if paths.is_empty() {
         return Ok(String::from("None content"));
