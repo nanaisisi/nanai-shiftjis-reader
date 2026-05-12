@@ -2,7 +2,11 @@
 
 use super::GLOBAL_OBJECT_COUNT;
 use super::explorer_command::create_explorer_command;
-use std::{ffi::c_void, ptr, sync::atomic::{AtomicU32, Ordering}};
+use std::{
+    ffi::c_void,
+    ptr,
+    sync::atomic::{AtomicU32, Ordering},
+};
 use windows::{
     Win32::{
         Foundation::{CLASS_E_NOAGGREGATION, E_NOINTERFACE, E_POINTER, S_OK},
@@ -20,10 +24,13 @@ pub(super) struct ExplorerClassFactoryObject {
     ref_count: AtomicU32,
 }
 
+/// `this` ポインタを `ExplorerClassFactoryObject` にキャストするヘルパー。
 fn factory_from_this(this: *mut c_void) -> *mut ExplorerClassFactoryObject {
     this as *mut ExplorerClassFactoryObject
 }
 
+/// `IUnknown::QueryInterface` の実装。
+/// `IClassFactory` または `IUnknown` の要求に対してインターフェースを提供する。
 unsafe extern "system" fn class_factory_query_interface(
     this: *mut c_void,
     riid: *const windows::core::GUID,
@@ -34,7 +41,9 @@ unsafe extern "system" fn class_factory_query_interface(
     }
 
     let object = factory_from_this(this);
-    unsafe { *ppv = ptr::null_mut(); }
+    unsafe {
+        *ppv = ptr::null_mut();
+    }
 
     let iid = unsafe { &*riid };
     if *iid == IClassFactory::IID || *iid == IUnknown::IID {
@@ -48,22 +57,30 @@ unsafe extern "system" fn class_factory_query_interface(
     }
 }
 
+/// `IUnknown::AddRef` の実装。
+/// 参照カウントを増加させて、新しい参照数を返す。
 unsafe extern "system" fn class_factory_add_ref(this: *mut c_void) -> u32 {
     let object = factory_from_this(this);
     unsafe { (*object).ref_count.fetch_add(1, Ordering::Relaxed) + 1 }
 }
 
+/// `IUnknown::Release` の実装。
+/// 参照カウントを減少させ、ゼロになればオブジェクトを解放する。
 unsafe extern "system" fn class_factory_release(this: *mut c_void) -> u32 {
     let object = factory_from_this(this);
     let count = unsafe { (*object).ref_count.fetch_sub(1, Ordering::Release) - 1 };
     if count == 0 {
         std::sync::atomic::fence(Ordering::Acquire);
-        unsafe { drop(Box::from_raw(object)); }
+        unsafe {
+            drop(Box::from_raw(object));
+        }
         GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
     }
     count
 }
 
+/// `IClassFactory::CreateInstance` の実装。
+/// 集約はサポートせず、`IExplorerCommand` または `IUnknown` を返す。
 unsafe extern "system" fn class_factory_create_instance(
     _this: *mut c_void,
     punkouter: *mut c_void,
@@ -77,20 +94,30 @@ unsafe extern "system" fn class_factory_create_instance(
         return E_POINTER;
     }
 
-    unsafe { *ppvobject = ptr::null_mut(); }
+    unsafe {
+        *ppvobject = ptr::null_mut();
+    }
     let command = create_explorer_command();
     let iid = unsafe { &*riid };
 
     if *iid == IExplorerCommand::IID || *iid == IUnknown::IID {
-        unsafe { *ppvobject = command; }
+        unsafe {
+            *ppvobject = command;
+        }
         S_OK
     } else {
         GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
-        unsafe { drop(Box::from_raw(command as *mut super::explorer_command::ExplorerCommandObject)); }
+        unsafe {
+            drop(Box::from_raw(
+                command as *mut super::explorer_command::ExplorerCommandObject,
+            ));
+        }
         E_NOINTERFACE
     }
 }
 
+/// `IClassFactory::LockServer` の実装。
+/// DLL のアンロードを制御するためのサーバーロックを増減する。
 unsafe extern "system" fn class_factory_lock_server(
     _this: *mut c_void,
     flock: windows::core::BOOL,
@@ -113,6 +140,8 @@ static CLASS_FACTORY_VTBL: IClassFactory_Vtbl = IClassFactory_Vtbl {
     LockServer: class_factory_lock_server,
 };
 
+/// COM クラスファクトリを生成し、参照カウントを初期化する。
+/// `GLOBAL_OBJECT_COUNT` をインクリメントして、DLL のアンロードを制御する。
 pub(super) fn create_class_factory() -> *mut std::ffi::c_void {
     GLOBAL_OBJECT_COUNT.fetch_add(1, Ordering::Relaxed);
     Box::into_raw(Box::new(ExplorerClassFactoryObject {

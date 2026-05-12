@@ -27,10 +27,13 @@ pub(super) struct ExplorerCommandObject {
     ref_count: AtomicU32,
 }
 
+/// `this` ポインタを `ExplorerCommandObject` にキャストするヘルパー。
 fn command_from_this(this: *mut c_void) -> *mut ExplorerCommandObject {
     this as *mut ExplorerCommandObject
 }
 
+/// `IUnknown::QueryInterface` の実装。
+/// `IExplorerCommand` または `IUnknown` に対してポインタを返す。
 unsafe extern "system" fn explorer_command_query_interface(
     this: *mut c_void,
     riid: *const windows::core::GUID,
@@ -75,6 +78,8 @@ unsafe extern "system" fn explorer_command_release(this: *mut c_void) -> u32 {
     count
 }
 
+/// `IExplorerCommand::GetTitle` の実装。
+/// コンテキストメニューに表示するコマンド名を返す。
 unsafe extern "system" fn explorer_command_get_title(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -95,6 +100,8 @@ unsafe extern "system" fn explorer_command_get_title(
     }
 }
 
+/// `IExplorerCommand::GetIcon` の実装。
+/// アイコンを返す機能は実装しておらず、`E_NOTIMPL` を返す。
 unsafe extern "system" fn explorer_command_get_icon(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -110,6 +117,8 @@ unsafe extern "system" fn explorer_command_get_icon(
     E_NOTIMPL
 }
 
+/// `IExplorerCommand::GetToolTip` の実装。
+/// コンテキストメニューのツールチップ文字列を返す。
 unsafe extern "system" fn explorer_command_get_tooltip(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -144,6 +153,8 @@ unsafe extern "system" fn explorer_command_get_canonical_name(
     S_OK
 }
 
+/// `IExplorerCommand::GetState` の実装。
+/// コマンドを常に有効状態として返す。
 unsafe extern "system" fn explorer_command_get_state(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -160,6 +171,8 @@ unsafe extern "system" fn explorer_command_get_state(
     S_OK
 }
 
+/// パッケージインストール内の実行可能ファイルパスを取得する。
+/// 見つからない場合は `None` を返す。
 fn get_viewer_executable_path() -> Option<PathBuf> {
     let package = Package::Current().ok()?;
     let installed_location = package.InstalledLocation().ok()?;
@@ -170,6 +183,8 @@ fn get_viewer_executable_path() -> Option<PathBuf> {
     exe_path.exists().then_some(exe_path)
 }
 
+/// 指定パスのファイルをビューアで開く。
+/// 実行ファイルの起動に失敗した場合は `E_FAIL` を返す。
 fn invoke_viewer_for_path(path: PathBuf) -> windows::core::HRESULT {
     let exe_path =
         get_viewer_executable_path().unwrap_or_else(|| PathBuf::from("nanai-shiftjis-reader.exe"));
@@ -180,6 +195,8 @@ fn invoke_viewer_for_path(path: PathBuf) -> windows::core::HRESULT {
         .unwrap_or(E_FAIL)
 }
 
+/// `IExplorerCommand::Invoke` の実装。
+/// 選択されたファイルを取得してビューアを起動する。
 unsafe extern "system" fn explorer_command_invoke(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
@@ -193,6 +210,8 @@ unsafe extern "system" fn explorer_command_invoke(
     invoke_viewer_for_path(path)
 }
 
+/// `IExplorerCommand::GetFlags` の実装。
+/// フラグを使用しないため、0 を返す。
 unsafe extern "system" fn explorer_command_get_flags(
     _this: *mut c_void,
     pflags: *mut u32,
@@ -207,6 +226,8 @@ unsafe extern "system" fn explorer_command_get_flags(
     S_OK
 }
 
+/// `IExplorerCommand::EnumSubCommands` の実装。
+/// サブコマンドを持たないため `E_NOTIMPL` を返す。
 unsafe extern "system" fn explorer_command_enum_sub_commands(
     _this: *mut c_void,
     ppenum: *mut *mut c_void,
@@ -237,6 +258,8 @@ static EXPLORER_COMMAND_VTBL: IExplorerCommand_Vtbl = IExplorerCommand_Vtbl {
     EnumSubCommands: explorer_command_enum_sub_commands,
 };
 
+/// `ExplorerCommandObject` をヒープに確保して返す。
+/// 参照カウントは1で初期化され、`GLOBAL_OBJECT_COUNT` を更新する。
 pub(super) fn create_explorer_command() -> *mut std::ffi::c_void {
     GLOBAL_OBJECT_COUNT.fetch_add(1, Ordering::Relaxed);
     Box::into_raw(Box::new(ExplorerCommandObject {
