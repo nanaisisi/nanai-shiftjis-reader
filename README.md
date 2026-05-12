@@ -3,7 +3,7 @@ AI generated content.
 
 # error
 
-config.toml上の以下の記述に起因して、ビルドエラーが発生する可能性があります。
+config.toml上の以下の記述に起因して、表示エラーが発生する可能性があります。
 [profile.dev.package."*"]
 codegen-backend = "llvm"
 
