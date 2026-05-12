@@ -5,12 +5,15 @@ use super::guid::CLSID_EXPLORER_COMMAND;
 use super::utils::{allocate_pwstr, get_selected_file_path};
 use std::{
     ffi::c_void,
+    path::PathBuf,
+    process::Command,
     ptr,
     sync::atomic::{AtomicU32, Ordering},
 };
 use windows::{
+    ApplicationModel::Package,
     Win32::{
-        Foundation::{E_NOINTERFACE, E_NOTIMPL, E_POINTER, S_OK},
+        Foundation::{E_FAIL, E_NOINTERFACE, E_NOTIMPL, E_POINTER, S_OK},
         UI::Shell::{IExplorerCommand, IExplorerCommand_Vtbl},
     },
     core::{IUnknown, IUnknown_Vtbl, Interface, PWSTR},
@@ -161,17 +164,40 @@ unsafe extern "system" fn explorer_command_get_state(
 
 /// `IExplorerCommand::Invoke` の実装。
 /// 選択されたファイルのパスを取得し、ビューアアプリを起動する。
+fn get_viewer_executable_path() -> Option<PathBuf> {
+    if let Ok(package) = Package::Current() {
+        if let Ok(installed_location) = package.InstalledLocation() {
+            if let Ok(path) = installed_location.Path() {
+                let install_path = path.to_string_lossy();
+                let exe_path =
+                    PathBuf::from(install_path.to_owned()).join("nanai-shiftjis-reader.exe");
+                if exe_path.exists() {
+                    return Some(exe_path);
+                }
+            }
+        }
+    }
+    None
+}
+
+fn invoke_viewer_for_path(path: PathBuf) -> windows::core::HRESULT {
+    let exe_path =
+        get_viewer_executable_path().unwrap_or_else(|| PathBuf::from("nanai-shiftjis-reader.exe"));
+    let result = Command::new(exe_path).arg(path).spawn();
+    if result.is_ok() { S_OK } else { E_FAIL }
+}
+
 unsafe extern "system" fn explorer_command_invoke(
     _this: *mut c_void,
     _psiitemarray: *mut c_void,
     _pbc: *mut c_void,
 ) -> windows::core::HRESULT {
-    match unsafe { get_selected_file_path(_psiitemarray) } {
+    let path = match unsafe { get_selected_file_path(_psiitemarray) } {
         Some(path) => path,
         None => return S_OK,
     };
 
-    S_OK
+    invoke_viewer_for_path(path)
 }
 
 /// `IExplorerCommand::GetFlags` の実装。フラグは設定しない（0を返す）。

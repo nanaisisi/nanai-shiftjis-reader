@@ -1,9 +1,4 @@
-#rustup toolchain install nightly
-[toolchain]
-channel = "nightly"
-
 #"-Zlinker-features=-lld"
-
 
 #cargo binstall sccache= "sccache"
 #scoop install sccache

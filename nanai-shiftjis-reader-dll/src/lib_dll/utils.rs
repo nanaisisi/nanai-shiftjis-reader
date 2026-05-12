@@ -14,10 +14,10 @@ use windows::{
     core::{Interface, PWSTR},
 };
 
-/// Explorer で選択されているファイルのパスをワイド文字列で取得する。
+/// Explorer で選択されているファイルのパスを取得する。
 /// `psiitemarray` が `null` または空の場合は `None` を返す。
 /// 先頭のアイテムのファイルシステムパスを返す。
-pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<Vec<u16>> {
+pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<std::path::PathBuf> {
     if psiitemarray.is_null() {
         return None;
     }
@@ -58,9 +58,7 @@ pub unsafe fn get_selected_file_path(psiitemarray: *mut c_void) -> Option<Vec<u1
         CoTaskMemFree(Some(psz_path.0 as *const _));
     }
 
-    let mut wide_path: Vec<u16> = path.encode_wide().collect();
-    wide_path.push(0);
-    Some(wide_path)
+    Some(std::path::PathBuf::from(path))
 }
 
 /// UTF-8文字列をCOMタスクメモリにコピーしたワイド文字列（`PWSTR`）として返す。
