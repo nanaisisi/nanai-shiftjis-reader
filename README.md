@@ -1,4 +1,5 @@
 AI 生成です。
+AI generated content.
 
 # error
 
@@ -6,7 +7,7 @@ config.toml上の以下の記述に起因して、ビルドエラーが発生す
 [profile.dev.package."*"]
 codegen-backend = "llvm"
 
-encoder_rsのsimd-accelは現バージョンではビルドエラーを引き起こすため、使用していません。
+encoding_rsのsimd-accel featureは現バージョンではビルドエラーを引き起こすため、使用していません。
 
 # LICENSE
 
