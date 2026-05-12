@@ -6,6 +6,8 @@ config.toml上の以下の記述に起因して、ビルドエラーが発生す
 [profile.dev.package."*"]
 codegen-backend = "llvm"
 
+encoder_rsのsimd-accelは現バージョンではビルドエラーを引き起こすため、使用していません。
+
 # LICENSE
 
 [MIT License](LICENSE-MIT) or [Apache License 2.0](LICENSE-APACHE), at your option.
