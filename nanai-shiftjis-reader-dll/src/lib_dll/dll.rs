@@ -15,7 +15,8 @@ use windows::{
 
 /// DLLがアンロード可能かどうかをCOMランタイムに通知する。
 /// オブジェクト数とロック数が両方ゼロのときのみ `S_OK` を返してアンロードを許可する。
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
+#[unsafe(export_name = "DllCanUnloadNow")]
 pub extern "system" fn DllCanUnloadNow() -> HRESULT {
     if GLOBAL_OBJECT_COUNT.load(Ordering::Relaxed) == 0
         && GLOBAL_LOCK_COUNT.load(Ordering::Relaxed) == 0
@@ -36,33 +37,36 @@ pub extern "system" fn DllCanUnloadNow() -> HRESULT {
 /// The caller must ensure that `rclsid`, `riid`, and `ppv` are valid, non-null pointers.
 /// Dereferencing and writing through these raw pointers is only safe when the provided
 /// pointer values are valid COM arguments from the caller.
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
+#[unsafe(export_name = "DllGetClassObject")]
 pub unsafe extern "system" fn DllGetClassObject(
     rclsid: *const GUID,
     riid: *const GUID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
-    unsafe {
-        if rclsid.is_null() || riid.is_null() || ppv.is_null() {
-            return E_POINTER;
-        }
+    if rclsid.is_null() || riid.is_null() || ppv.is_null() {
+        return E_POINTER;
+    }
 
-        if *rclsid != CLSID_EXPLORER_COMMAND {
-            return CLASS_E_CLASSNOTAVAILABLE;
-        }
+    if unsafe { *rclsid } != CLSID_EXPLORER_COMMAND {
+        return CLASS_E_CLASSNOTAVAILABLE;
+    }
 
-        let factory = create_class_factory();
-        let iid = &*riid;
-        if *iid == IClassFactory::IID || *iid == windows::core::IUnknown::IID {
+    let factory = create_class_factory();
+    let iid = unsafe { &*riid };
+    if *iid == IClassFactory::IID || *iid == windows::core::IUnknown::IID {
+        unsafe {
             *ppv = factory;
-            S_OK
-        } else {
-            GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
-            std::sync::atomic::fence(Ordering::Acquire);
+        }
+        S_OK
+    } else {
+        GLOBAL_OBJECT_COUNT.fetch_sub(1, Ordering::Relaxed);
+        std::sync::atomic::fence(Ordering::Acquire);
+        unsafe {
             drop(Box::from_raw(
                 factory as *mut super::class_factory::ExplorerClassFactoryObject,
             ));
-            E_NOINTERFACE
         }
+        E_NOINTERFACE
     }
 }
