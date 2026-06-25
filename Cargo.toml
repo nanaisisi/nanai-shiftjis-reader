@@ -20,8 +20,8 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-anyhow = "1"
-encoding_rs = { version = "0.8" }
-compio = { version = "0.18", features = ["fs", "runtime", "process"] }
-gpui = "0.2"
-windows = { version = "0.62", features = ["ApplicationModel"] }
+anyhow = "1.0.102"
+encoding_rs = { version = "0.8.35" }
+compio = { version = "0.19.1", features = ["fs", "runtime", "process"] }
+gpui = "0.2.2"
+windows = { version = "0.62.2", features = ["ApplicationModel"] }
