@@ -20,7 +20,7 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-anyhow = "1.0.102"
+anyhow = "1.0.103"
 encoding_rs = { version = "0.8.35" }
 compio = { version = "0.19.1", features = ["fs", "runtime", "process"] }
 gpui = "0.2.2"
