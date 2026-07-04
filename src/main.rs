@@ -2,11 +2,11 @@
 
 // Shift_JIS テキストビューアのエントリーポイント。
 // MSIXパッケージ状態を確認した後、ファイルをデコードしてGUIを起動する。
-mod file_process;
+mod text_io;
 mod ui;
 use windows::ApplicationModel::Package;
 
-fn main() {
+fn main() -> Result<()> {
     // MSIXパッケージとして動作しているかどうかを確認し、パッケージファミリー名を表示する
     match Package::Current() {
         Ok(package) => match package.Id() {
@@ -20,7 +20,8 @@ fn main() {
     }
 
     // コマンドライン引数で指定されたファイルをShift_JISとして読み込み、UTF-8にデコードする
-    let decoded_text = file_process::file_process().unwrap_or_else(|err| err.to_string());
+    let decoded_text = text_io::file_process().unwrap_or_else(|err| err.to_string());
     // デコードされたテキストをGUIウィンドウで表示する
     ui::ui(decoded_text);
+    Ok(())
 }
