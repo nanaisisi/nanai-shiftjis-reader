@@ -1,6 +1,10 @@
 AI 生成です。
 AI generated content.
 
+# Features
+
+cargo run
+
 # error
 
 config.toml上の以下の記述に起因して、表示エラーが発生する可能性があります。

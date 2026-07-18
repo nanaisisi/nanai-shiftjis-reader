@@ -2,6 +2,7 @@
 #![cfg(feature = "win-reactor-ui")]
 use windows_reactor::*;
 
+#[allow(dead_code)]
 fn app(_cx: &mut RenderCx) -> Element {
     let tall_body = vstack(
         (1..=30)
@@ -30,17 +31,8 @@ fn app(_cx: &mut RenderCx) -> Element {
     .into()
 }
 
-pub(crate) fn ui(decoded_text: String) {
-    let application = Application::new().unwrap();
-    let window = application
-        .create_window()
-        .title("ScrollViewer Sample")
-        .size((400, 300))
-        .build()
-        .unwrap();
-
-    // set the UI content built by the `app` function above
-    let mut cx = RenderCx::new(std::rc::Rc::new(|| {}));
-    window.set_content(app(&mut cx));
-    window.show().unwrap();
+pub(crate) fn ui(decoded_text: String) -> Result<()> {
+    bootstrap()?;
+    let _ = decoded_text;
+    Ok(())
 }
