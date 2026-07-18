@@ -1,3 +1,4 @@
+#![cfg(feature = "gpui-ui")]
 use gpui::{
     App, Application, Bounds, Context, SharedString, Window, WindowBounds, WindowOptions, div,
     point, prelude::*, px, rgb, size,

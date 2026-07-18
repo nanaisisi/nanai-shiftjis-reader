@@ -6,7 +6,7 @@ mod text_io;
 mod ui;
 use windows::ApplicationModel::Package;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // MSIXパッケージとして動作しているかどうかを確認し、パッケージファミリー名を表示する
     match Package::Current() {
         Ok(package) => match package.Id() {

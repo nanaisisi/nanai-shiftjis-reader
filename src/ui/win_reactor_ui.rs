@@ -1,5 +1,5 @@
 //! Sample for the `ScrollViewer` element.
-
+#![cfg(feature = "win-reactor-ui")]
 use windows_reactor::*;
 
 fn app(_cx: &mut RenderCx) -> Element {
@@ -30,6 +30,17 @@ fn app(_cx: &mut RenderCx) -> Element {
     .into()
 }
 
-fn main() -> Result<()> {
-    reactor_samples::run("ScrollViewer", app)
+pub(crate) fn ui(decoded_text: String) {
+    let application = Application::new().unwrap();
+    let window = application
+        .create_window()
+        .title("ScrollViewer Sample")
+        .size((400, 300))
+        .build()
+        .unwrap();
+
+    // set the UI content built by the `app` function above
+    let mut cx = RenderCx::new(std::rc::Rc::new(|| {}));
+    window.set_content(app(&mut cx));
+    window.show().unwrap();
 }

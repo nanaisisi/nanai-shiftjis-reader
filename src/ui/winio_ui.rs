@@ -1,5 +1,4 @@
-cfg!(winio - ui);
-
+#![cfg(feature = "winio-ui")]
 use std::ops::Deref;
 
 use winio::prelude::*;

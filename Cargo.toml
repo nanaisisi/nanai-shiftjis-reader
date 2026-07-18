@@ -27,7 +27,7 @@ gpui-ui = ["dep:gpui"]
 
 [dependencies]
 #UI
-windows-reactor = { git = "https://github.com/microsoft/windows-rs", optional = true }
+windows-reactor = { git = "https://github.com/microsoft/windows-rs", branch = "master", optional = true }
 winio = { version = "0.11.0", optional = true }
 gpui = { version = "0.2.2", optional = true }
 
@@ -39,4 +39,4 @@ windows = { version = "0.62.2", features = ["ApplicationModel"] }
 
 [build-dependencies]
 #UI
-windows-reactor-setup = { git = "https://github.com/microsoft/windows-rs", optional = true }
+windows-reactor-setup = { git = "https://github.com/microsoft/windows-rs", branch = "master", optional = true }
