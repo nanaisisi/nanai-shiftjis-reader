@@ -1,5 +1,4 @@
 //! Sample for the `ScrollViewer` element.
-#![cfg(feature = "win-reactor-ui")]
 use windows_reactor::*;
 
 #[allow(dead_code)]

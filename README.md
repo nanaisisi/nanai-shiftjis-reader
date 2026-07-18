@@ -3,7 +3,16 @@ AI generated content.
 
 # Features
 
+windows
+
+win-reactor-ui:
 cargo run
+
+gpui-ui:
+cargo run --no-default-features --features gpui-ui
+
+winio-ui:
+cargo run --no-default-features --features winio-ui
 
 # error
 

@@ -20,10 +20,10 @@ panic = "abort"
 strip = "symbols"
 
 [features]
-win-reactor-ui = ["dep:windows-reactor", "dep:windows-reactor-setup"]
-default = ["win-reactor-ui"]
+win-reactor-ui = ["dep:windows-reactor"]
 winio-ui = ["dep:winio"]
 gpui-ui = ["dep:gpui"]
+default = ["win-reactor-ui"]
 
 [dependencies]
 #UI
@@ -49,4 +49,4 @@ windows = { version = "0.62.2", features = ["ApplicationModel"] }
 [target.'cfg(target_os = "windows")'.build-dependencies]
 #UI
 #windows
-windows-reactor-setup = { git = "https://github.com/microsoft/windows-rs", branch = "master", optional = true }
+windows-reactor-setup = { git = "https://github.com/microsoft/windows-rs", branch = "master" }

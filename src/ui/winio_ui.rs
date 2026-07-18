@@ -1,187 +1,99 @@
 #![cfg(feature = "winio-ui")]
+
 use std::ops::Deref;
 
 use winio::prelude::*;
 
-use crate::{Error, Result};
-
-pub struct ScrollViewPage {
-    window: Child<TabViewItem>,
+pub struct TextViewerPage {
+    window: Child<Window>,
     scroll: Child<ScrollView>,
-    radios: Child<RadioButtonGroup>,
-    add_btn: Child<Button>,
-    del_btn: Child<Button>,
-    show_btn: Child<Button>,
-    selected: Option<usize>,
+    label: Child<Label>,
 }
 
 #[derive(Debug)]
-pub enum ScrollViewPageEvent {
-    ShowMessage(MessageBox),
-}
+pub enum TextViewerPageEvent {}
 
 #[derive(Debug)]
-pub enum ScrollViewPageMessage {
+pub enum TextViewerPageMessage {
     Noop,
-    Add,
-    Del,
-    Show,
-    Select(usize),
 }
 
-impl Component for ScrollViewPage {
+impl Component for TextViewerPage {
     type Error = Error;
-    type Event = ScrollViewPageEvent;
-    type Init<'a> = ();
-    type Message = ScrollViewPageMessage;
+    type Event = TextViewerPageEvent;
+    type Init<'a> = String;
+    type Message = TextViewerPageMessage;
 
-    async fn init(_init: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Result<Self> {
+    async fn init(decoded_text: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Result<Self> {
         init! {
-            window: TabViewItem = (()) => {
-                text: "ScrollView",
+            window: Window = (()) => {
+                text: "Shift_JIS Viewer",
+                size: Size::new(800.0, 600.0),
             },
             scroll: ScrollView = (&window) => {
                 vscroll: true,
-                hscroll: false,
+                hscroll: true,
             },
-            add_btn: Button = (&window) => {
-                text: "Add Radio",
+            label: Label = (&scroll) => {
+                text: decoded_text,
+                halign: HAlign::Left,
             },
-            del_btn: Button = (&window) => {
-                text: "Delete Radio",
-            },
-            show_btn: Button = (&window) => {
-                text: "Show Selected",
-            },
-            radios: RadioButtonGroup = ([]),
         }
+
+        window.show()?;
 
         Ok(Self {
             window,
             scroll,
-            radios,
-            add_btn,
-            del_btn,
-            show_btn,
-            selected: None,
+            label,
         })
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
         start! {
-            sender, default: ScrollViewPageMessage::Noop,
-            self.add_btn => {
-                ButtonEvent::Click => ScrollViewPageMessage::Add,
-            },
-            self.del_btn => {
-                ButtonEvent::Click => ScrollViewPageMessage::Del,
-            },
-            self.show_btn => {
-                ButtonEvent::Click => ScrollViewPageMessage::Show,
+            sender, default: TextViewerPageMessage::Noop,
+            self.window => {
+                WindowEvent::Close => TextViewerPageMessage::Noop,
+                WindowEvent::Move => TextViewerPageMessage::Noop,
+                WindowEvent::Resize => TextViewerPageMessage::Noop,
+                WindowEvent::ThemeChanged => TextViewerPageMessage::Noop,
             },
             self.scroll => {},
-            self.radios => {
-                RadioButtonGroupEvent::Click(i) => ScrollViewPageMessage::Select(i)
-            }
+            self.label => {},
         }
-
-        std::future::pending::<!>().await
     }
 
     async fn update_children(&mut self) -> Result<bool> {
-        update_children!(
-            self.window,
-            self.scroll,
-            self.add_btn,
-            self.del_btn,
-            self.show_btn,
-            self.radios
-        );
-        std::future::pending::<!>().await
+        update_children!(self.window, self.scroll, self.label)
     }
 
     async fn update(
         &mut self,
         message: Self::Message,
-        sender: &ComponentSender<Self>,
+        _sender: &ComponentSender<Self>,
     ) -> Result<bool> {
         match message {
-            ScrollViewPageMessage::Noop => Ok(false),
-            ScrollViewPageMessage::Add => {
-                let idx = self.radios.len() + 1;
-                init! {
-                    radio: RadioButton = (&self.scroll) => {
-                        text: format!("Radio {idx}"),
-                        checked: false,
-                    },
-                }
-                self.radios.push(radio);
-                Ok(true)
-            }
-            ScrollViewPageMessage::Del => {
-                if !self.radios.is_empty() {
-                    self.radios.pop();
-                }
-                Ok(true)
-            }
-            ScrollViewPageMessage::Show => {
-                let selected = self.radios.iter().find_map(|r| {
-                    if r.is_checked().unwrap_or_default() {
-                        Some(r.text().unwrap_or_default())
-                    } else {
-                        None
-                    }
-                });
-                sender.output(ScrollViewPageEvent::ShowMessage(
-                    MessageBox::new()
-                        .title("Selected Radio")
-                        .message(selected.unwrap_or("No selection".to_string()))
-                        .buttons(MessageBoxButton::Ok),
-                ))?;
-                Ok(false)
-            }
-            ScrollViewPageMessage::Select(idx) => {
-                self.selected = Some(idx);
-                Ok(false)
-            }
+            TextViewerPageMessage::Noop => Ok(false),
         }
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) -> Result<()> {
-        let csize = self.window.size()?;
-
-        let mut radios_panel = StackPanel::new(Orient::Vertical);
-        for radio in self.radios.iter_mut() {
-            radios_panel
-                .push(radio)
-                .margin(Margin::new_all_same(4.0))
-                .finish();
-        }
-
-        radios_panel.set_size(csize)?;
-
-        let mut buttons_panel = layout! {
-            StackPanel::new(Orient::Vertical),
-            self.add_btn  => { margin: Margin::new_all_same(4.0) },
-            self.del_btn  => { margin: Margin::new_all_same(4.0) },
-            self.show_btn => { margin: Margin::new_all_same(4.0) },
-        };
-
-        let mut root_panel = layout! {
-            Grid::from_str("1*,auto", "1*").unwrap(),
-            self.scroll   => { column: 0, row: 0 },
-            buttons_panel => { column: 1, row: 0, halign: HAlign::Center, valign: VAlign::Top },
-        };
-
-        root_panel.set_size(csize)?;
+        let csize = self.window.client_size()?;
+        self.scroll.set_size(csize)?;
+        self.label.set_size(self.label.preferred_size()?)?;
         Ok(())
     }
 }
 
-impl Deref for ScrollViewPage {
-    type Target = TabViewItem;
+impl Deref for TextViewerPage {
+    type Target = Window;
 
     fn deref(&self) -> &Self::Target {
         &self.window
     }
+}
+
+pub fn ui(decoded_text: String) {
+    let _ = App::new("c.nanaisisi.nanai_shiftjis_reader")
+        .and_then(|app| app.run::<TextViewerPage>(decoded_text));
 }
