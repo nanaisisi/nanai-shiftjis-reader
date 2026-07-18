@@ -1,15 +1,12 @@
 cfg_select! {
     feature = "win-reactor-ui" => {
         mod win_reactor_ui;
-        use crate::ui::win_reactor_ui;
     },
     feature = "winio-ui" => {
         mod winio_ui;
-        use crate::ui::winio_ui;
     },
     feature = "gpui-ui" => {
         mod gpui_ui;
-        use crate::ui::gpui_ui;
     }
 }
 
