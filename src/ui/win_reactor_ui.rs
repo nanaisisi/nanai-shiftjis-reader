@@ -1,5 +1,6 @@
 //! Sample for the `ScrollViewer` element.
 use windows_reactor::*;
+use crate::text_io::LoadedFile;
 
 #[allow(dead_code)]
 fn app(_cx: &mut RenderCx) -> Element {
@@ -30,8 +31,8 @@ fn app(_cx: &mut RenderCx) -> Element {
     .into()
 }
 
-pub(crate) fn ui(decoded_text: String) -> Result<()> {
+pub(crate) fn ui(loaded_file: LoadedFile) -> Result<()> {
     bootstrap()?;
-    let _ = decoded_text;
+    let _ = loaded_file;
     Ok(())
 }

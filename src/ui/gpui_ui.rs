@@ -1,44 +1,98 @@
 #![cfg(feature = "gpui-ui")]
+use std::path::PathBuf;
 use gpui::{
-    App, Application, Bounds, Context, SharedString, Window, WindowBounds, WindowOptions, div,
+    App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div,
     point, prelude::*, px, rgb, size,
 };
+use crate::text_io::{save_file_shiftjis, LoadedFile};
 
-/// デコードされたテキストを保持するビューモデル
-struct ReadText {
-    text: SharedString,
+/// デコードされたテキストとファイルパスを保持するビューモデル
+struct NotepadModel {
+    path: Option<PathBuf>,
+    text: String,
+    status_message: Option<String>,
 }
 
-impl Render for ReadText {
-    /// テキストをスクロール可能な領域に描画する
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+impl NotepadModel {
+    fn save(&mut self) {
+        if let Some(ref path) = self.path {
+            match save_file_shiftjis(path, &self.text) {
+                Ok(_) => self.status_message = Some("保存しました (Shift_JIS)".into()),
+                Err(err) => self.status_message = Some(format!("保存エラー: {err}")),
+            }
+        } else {
+            self.status_message = Some("ファイルパスが指定されていません".into());
+        }
+    }
+}
+
+impl Render for NotepadModel {
+    /// メモ帳画面の描画
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let title = match &self.path {
+            Some(p) => format!("Nanai Shift_JIS Notepad - {}", p.display()),
+            None => "Nanai Shift_JIS Notepad (新規ファイル)".to_string(),
+        };
+
         div()
             .flex()
             .flex_col()
             .gap_3()
             .p(px(16.0))
-            .bg(rgb(0x505050)) // 背景色：ダークグレー
-            .size(px(500.0))
+            .bg(rgb(0x282c34)) // ダークテーマ背景
+            .size(px(600.0))
             .justify_start()
             .items_start()
             .shadow_lg()
-            .border_1()
-            .border_color(rgb(0x0000ff)) // 枠線の色：青
-            .text_xl()
-            .text_color(rgb(0xffffff)) // 文字色：白
-            .child(format!("{}!", self.text))
-            .child(div().flex().gap_2())
-            .id("vertical")
-            .overflow_scroll()
+            .text_color(rgb(0xabb2bf))
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .w_full()
+                    .child(div().font_bold().text_xl().child(title))
+                    .child(
+                        div()
+                            .p(px(6.0))
+                            .bg(rgb(0x4b5263))
+                            .text_color(rgb(0xffffff))
+                            .rounded_md()
+                            .cursor_pointer()
+                            .child("保存 (Shift_JIS)")
+                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this, _, _, cx| {
+                                this.save();
+                                cx.notify();
+                            })),
+                    ),
+            )
+            .child(
+                if let Some(msg) = &self.status_message {
+                    div().text_sm().text_color(rgb(0x98c379)).child(msg.clone())
+                } else {
+                    div()
+                }
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .w_full()
+                    .h_full()
+                    .p(px(8.0))
+                    .bg(rgb(0x1e2127))
+                    .border_1()
+                    .border_color(rgb(0xabb2bf))
+                    .id("text-content")
+                    .overflow_scroll()
+                    .child(self.text.clone()),
+            )
     }
 }
 
-/// デコードされたテキストをGUIウィンドウで表示する。
-/// ウィンドウは座標 (100, 100) に 500×500 ピクセルで表示される。
-pub fn ui(decoded_text: String) {
+/// デコードされたテキストをGUIウィンドウで表示・編集する。
+pub fn ui(loaded_file: LoadedFile) {
     Application::new().run(|cx: &mut App| {
-        // ウィンドウの初期位置とサイズを設定する
-        let bounds = Bounds::new(point(px(100.), px(100.)), size(px(500.), px(500.0)));
+        let bounds = Bounds::new(point(px(100.), px(100.)), size(px(600.), px(600.0)));
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
@@ -46,9 +100,15 @@ pub fn ui(decoded_text: String) {
                 ..Default::default()
             },
             |window, cx| {
-                window.set_window_title("Shift_JIS Viewer");
-                cx.new(|_| ReadText {
-                    text: decoded_text.into(),
+                let window_title = match &loaded_file.path {
+                    Some(p) => format!("Shift_JIS Notepad - {}", p.display()),
+                    None => "Shift_JIS Notepad".to_string(),
+                };
+                window.set_window_title(&window_title);
+                cx.new(|_| NotepadModel {
+                    path: loaded_file.path,
+                    text: loaded_file.content,
+                    status_message: None,
                 })
             },
         )

@@ -10,8 +10,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_msix::check_msix_package();
 
     // コマンドライン引数で指定されたファイルをShift_JISとして読み込み、UTF-8にデコードする
-    let decoded_text = text_io::file_process().unwrap_or_else(|err| err.to_string());
-    // デコードされたテキストをGUIウィンドウで表示する
-    ui::ui(decoded_text);
+    let loaded_file = text_io::file_process().unwrap_or_else(|err| text_io::LoadedFile {
+        path: None,
+        content: err.to_string(),
+    });
+    // デコードされたテキストをGUIウィンドウで表示・編集する
+    ui::ui(loaded_file);
     Ok(())
 }

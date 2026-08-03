@@ -16,15 +16,17 @@ mod winio_ui;
 #[cfg(feature = "gpui-ui")]
 mod gpui_ui;
 
-pub fn ui(decoded_text: String) {
+use crate::text_io::LoadedFile;
+
+pub fn ui(loaded_file: LoadedFile) {
     #[cfg(feature = "win-reactor-ui")]
     {
-        let _ = win_reactor_ui::ui(decoded_text);
+        let _ = win_reactor_ui::ui(loaded_file);
     }
 
     #[cfg(all(not(feature = "win-reactor-ui"), feature = "winio-ui"))]
     {
-        winio_ui::ui(decoded_text);
+        winio_ui::ui(loaded_file);
     }
 
     #[cfg(all(
@@ -33,6 +35,6 @@ pub fn ui(decoded_text: String) {
         feature = "gpui-ui"
     ))]
     {
-        gpui_ui::ui(decoded_text);
+        gpui_ui::ui(loaded_file);
     }
 }

@@ -1,8 +1,8 @@
 #![cfg(feature = "winio-ui")]
 
 use std::ops::Deref;
-
 use winio::prelude::*;
+use crate::text_io::LoadedFile;
 
 pub struct TextViewerPage {
     window: Child<Window>,
@@ -21,13 +21,18 @@ pub enum TextViewerPageMessage {
 impl Component for TextViewerPage {
     type Error = Error;
     type Event = TextViewerPageEvent;
-    type Init<'a> = String;
+    type Init<'a> = LoadedFile;
     type Message = TextViewerPageMessage;
 
-    async fn init(decoded_text: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Result<Self> {
+    async fn init(loaded_file: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Result<Self> {
+        let win_title = match &loaded_file.path {
+            Some(p) => format!("Shift_JIS Notepad - {}", p.display()),
+            None => "Shift_JIS Notepad".to_string(),
+        };
+
         init! {
             window: Window = (()) => {
-                text: "Shift_JIS Viewer",
+                text: win_title,
                 size: Size::new(800.0, 600.0),
             },
             scroll: ScrollView = (&window) => {
@@ -35,7 +40,7 @@ impl Component for TextViewerPage {
                 hscroll: true,
             },
             label: Label = (&scroll) => {
-                text: decoded_text,
+                text: loaded_file.content,
                 halign: HAlign::Left,
             },
         }
@@ -93,7 +98,7 @@ impl Deref for TextViewerPage {
     }
 }
 
-pub fn ui(decoded_text: String) {
+pub fn ui(loaded_file: LoadedFile) {
     let _ = App::new("c.nanaisisi.nanai-shiftjis-notepad")
-        .and_then(|app| app.run::<TextViewerPage>(decoded_text));
+        .and_then(|app| app.run::<TextViewerPage>(loaded_file));
 }
