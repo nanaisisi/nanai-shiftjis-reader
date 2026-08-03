@@ -99,6 +99,7 @@ impl Deref for TextViewerPage {
 }
 
 pub fn ui(loaded_file: LoadedFile) {
-    let _ = App::new("c.nanaisisi.nanai-shiftjis-notepad")
-        .and_then(|app| app.run::<TextViewerPage>(loaded_file));
+    if let Ok(app) = App::builder().name("c.nanaisisi.nanai-shiftjis-notepad").build() {
+        let _ = app.block_on(TextViewerPage::run(loaded_file));
+    }
 }

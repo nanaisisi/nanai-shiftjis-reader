@@ -50,7 +50,7 @@ impl Render for NotepadModel {
                     .flex()
                     .justify_between()
                     .w_full()
-                    .child(div().font_bold().text_xl().child(title))
+                    .child(div().font_weight(gpui::FontWeight::BOLD).text_xl().child(title))
                     .child(
                         div()
                             .p(px(6.0))
