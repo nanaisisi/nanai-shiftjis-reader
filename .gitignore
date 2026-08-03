@@ -6,8 +6,8 @@ devcert.pfx
 
 # Windows SDK packages and generated files
 .winapp
-nanai-shiftjis-reader.msix
+nanai-shiftjis-notepad.msix
 Assets/
-nanai-shiftjis-reader.exe
-nanai_shiftjis_reader_dll.dll
+nanai-shiftjis-notepad.exe
+nanai-shiftjis-notepad_dll.dll
 dist/

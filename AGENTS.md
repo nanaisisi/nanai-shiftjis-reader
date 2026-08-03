@@ -1,4 +1,4 @@
-# Agent Guidance for `nanai-shiftjis-reader`
+# Agent Guidance for `nanai-shiftjis-notepad`
 
 ## What this repository is
 

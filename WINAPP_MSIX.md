@@ -1,6 +1,6 @@
 # winapp CLI / MSIX パッケージ手順
 
-このリポジトリでは実行ファイル名が `nanai-shiftjis-reader.exe` です。
+このリポジトリでは実行ファイル名が `nanai-shiftjis-notepad.exe` です。
 `winapp` のサンプルにある `rust-app.exe` / `rust-app.msix` の名前ではなく、以下の手順を使ってください。
 
 ## 1. デバッグ ID を使用した実行
@@ -14,13 +14,13 @@ cargo build
 2. デバッグ ID を付与します。
 
 ```powershell
-winapp create-debug-identity .\target\debug\nanai-shiftjis-reader.exe
+winapp create-debug-identity .\target\debug\nanai-shiftjis-notepad.exe
 ```
 
 3. 実行します。
 
 ```powershell
-.\target\debug\nanai-shiftjis-reader.exe
+.\target\debug\nanai-shiftjis-notepad.exe
 ```
 
 4. 正常なら `Package Family Name:` が表示されます。
@@ -37,8 +37,8 @@ cargo build --release
 
 ```powershell
 mkdir dist
-copy .\target\release\nanai-shiftjis-reader.exe .\dist\
-copy .\target\release\nanai_shiftjis_reader_dll.dll .\dist\
+copy .\target\release\nanai-shiftjis-notepad.exe .\dist\
+copy .\target\release\nanai-shiftjis-notepad_dll.dll .\dist\
 ```
 
 3. 開発用証明書を生成します。
@@ -62,13 +62,13 @@ winapp cert install .\devcert.pfx
 6. MSIX をインストールします。
 
 ```powershell
-Add-AppxPackage .\nanai-shiftjis-reader.msix
+Add-AppxPackage .\nanai-shiftjis-notepad.msix
 ```
 
 7. 必要に応じてアプリを起動します。
 
 ```powershell
-nanai-shiftjis-reader
+nanai-shiftjis-notepad
 ```
 
 ## 3. 注意事項

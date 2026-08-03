@@ -94,6 +94,6 @@ impl Deref for TextViewerPage {
 }
 
 pub fn ui(decoded_text: String) {
-    let _ = App::new("c.nanaisisi.nanai_shiftjis_reader")
+    let _ = App::new("c.nanaisisi.nanai-shiftjis-notepad")
         .and_then(|app| app.run::<TextViewerPage>(decoded_text));
 }

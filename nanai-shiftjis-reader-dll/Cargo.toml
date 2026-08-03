@@ -1,5 +1,5 @@
 [package]
-name = "nanai-shiftjis-reader-dll"
+name = "nanai-shiftjis-notepad-dll"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

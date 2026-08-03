@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Build and package the nanai-shiftjis-reader app using winapp and MSIX.
+Build and package the nanai-shiftjis-notepad app using winapp and MSIX.
 
 .DESCRIPTION
 This script supports two modes:
@@ -32,15 +32,15 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location $projectRoot
 try {
-    $exeName = 'nanai-shiftjis-reader.exe'
+    $exeName = 'nanai-shiftjis-notepad.exe'
     $debugPath = Join-Path $projectRoot 'target\debug\' $exeName
     $releasePath = Join-Path $projectRoot 'target\release\' $exeName
-    $releaseDllPath = Join-Path $projectRoot 'target\release\nanai_shiftjis_reader_dll.dll'
+    $releaseDllPath = Join-Path $projectRoot 'target\release\nanai-shiftjis-notepad_dll.dll'
     $distDir = Join-Path $projectRoot 'dist'
     $certPath = Join-Path $projectRoot 'devcert.pfx'
-    $msixName = 'nanai-shiftjis-reader.msix'
+    $msixName = 'nanai-shiftjis-notepad.msix'
     $msixPath = Join-Path $projectRoot $msixName
-    $packageName = 'nanai-shiftjis-reader'
+    $packageName = 'nanai-shiftjis-notepad'
 
     function Build-Debug {
         if (-not $SkipBuild) {
@@ -57,7 +57,7 @@ try {
             Write-Host 'Building release binary...' -ForegroundColor Cyan
             cargo build --release
             Write-Host 'Building DLL crate release binary...' -ForegroundColor Cyan
-            cargo build --release --manifest-path .\nanai-shiftjis-reader-dll\Cargo.toml
+            cargo build --release --manifest-path .\nanai-shiftjis-notepad-dll\Cargo.toml
         }
         if (-not (Test-Path $releasePath)) {
             throw "Release binary not found: $releasePath"

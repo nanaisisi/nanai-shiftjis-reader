@@ -89,7 +89,7 @@ unsafe extern "system" fn explorer_command_get_title(
         return E_POINTER;
     }
 
-    match allocate_pwstr("Open with nanai-shiftjis-reader") {
+    match allocate_pwstr("Open with nanai-shiftjis-notepad") {
         Ok(ptr) => {
             unsafe {
                 *ppszname = ptr;
@@ -190,7 +190,7 @@ fn get_viewer_executable_path() -> Option<PathBuf> {
     let installed_location = package.InstalledLocation().ok()?;
     let path = installed_location.Path().ok()?;
     let exe_path =
-        PathBuf::from(path.to_string_lossy().to_owned()).join("nanai-shiftjis-reader.exe");
+        PathBuf::from(path.to_string_lossy().to_owned()).join("nanai-shiftjis-notepad.exe");
 
     exe_path.exists().then_some(exe_path)
 }
@@ -205,7 +205,7 @@ fn get_viewer_icon_spec() -> Option<String> {
 /// 実行ファイルの起動に失敗した場合は `E_FAIL` を返す。
 fn invoke_viewer_for_paths(paths: &[PathBuf]) -> windows::core::HRESULT {
     let exe_path =
-        get_viewer_executable_path().unwrap_or_else(|| PathBuf::from("nanai-shiftjis-reader.exe"));
+        get_viewer_executable_path().unwrap_or_else(|| PathBuf::from("nanai-shiftjis-notepad.exe"));
     let mut command = Command::new(exe_path);
     command.args(paths.iter().map(|path| path.as_os_str()));
 

@@ -1,11 +1,11 @@
 [package]
-name = "nanai-shiftjis-reader"
+name = "nanai-shiftjis-notepad"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [workspace]
-members = ["nanai-shiftjis-reader-dll"]
+members = ["nanai-shiftjis-notepad-dll"]
 
 [workspace.package]
 version = "0.1.0"
