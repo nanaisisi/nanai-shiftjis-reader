@@ -19,19 +19,7 @@ codegen-units = 1
 panic = "abort"
 strip = "symbols"
 
-[features]
-win-reactor-ui = ["dep:windows-reactor"]
-winio-ui = ["dep:winio"]
-gpui-ui = ["dep:gpui"]
-default = ["win-reactor-ui"]
-
 [dependencies]
-#UI
-#cross
-gpui = { version = "0.2.2", optional = true }
-#winio
-winio = { version = "0.12.0", optional = true }
-
 #basic process
 #cross
 anyhow = "1.0.104"
@@ -44,9 +32,15 @@ compio = { version = "0.19.2", features = ["fs", "runtime", "process"] }
 windows-reactor = { git = "https://github.com/microsoft/windows-rs", branch = "master", optional = true }
 
 #basic process
-windows = { version = "0.62.2", features = ["ApplicationModel"] }
+windows = { version = "0.62.2", features = [
+    "ApplicationModel",
+], optional = true }
+
+#not windows
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+#ui
+winui = "0.7.1"
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 #UI
-#windows
-windows-reactor-setup = { git = "https://github.com/microsoft/windows-rs", branch = "master" }
+windows-reactor-setup = { git = "https://github.com/microsoft/windows-rs", branch = "master", optional = true }

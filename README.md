@@ -8,12 +8,6 @@ windows
 win-reactor-ui:
 cargo run
 
-gpui-ui:
-cargo run --no-default-features --features gpui-ui
-
-winio-ui:
-cargo run --no-default-features --features winio-ui
-
 # error
 
 config.toml上の以下の記述に起因して、表示エラーが発生する可能性があります。
