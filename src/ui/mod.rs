@@ -9,7 +9,7 @@ use crate::text_io::LoadedFile;
 pub fn ui(loaded_file: LoadedFile) {
     #[cfg(feature = "win-reactor-ui")]
     {
-        let _ = win_reactor_ui::ui(loaded_file);
+        win_reactor_ui::ui(loaded_file);
     }
 
     #[cfg(all(not(feature = "win-reactor-ui"), feature = "gpui-ui"))]

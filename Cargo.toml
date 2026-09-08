@@ -21,11 +21,7 @@ strip = "symbols"
 
 [features]
 default = ["win-reactor-ui"]
-win-reactor-ui = [
-    "dep:windows",
-    "dep:windows-reactor",
-    "dep:windows-reactor-setup",
-]
+win-reactor-ui = ["dep:windows-reactor", "dep:windows-reactor-setup"]
 gpui-ui = ["dep:gpui", "dep:gpui-component", "dep:gpui_platform"]
 
 [dependencies]
@@ -39,11 +35,6 @@ compio = { version = "0.19.2", features = ["fs", "runtime", "process"] }
 #UI
 #windows-reactor
 windows-reactor = { git = "https://github.com/microsoft/windows-rs", branch = "master", optional = true }
-
-#basic process
-windows = { version = "0.62.2", features = [
-    "ApplicationModel",
-], optional = true }
 
 #not windows
 [target.'cfg(not(target_os = "windows"))'.dependencies]

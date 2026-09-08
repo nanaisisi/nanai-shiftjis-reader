@@ -7,7 +7,7 @@ use compio::{fs::OpenOptions, io::AsyncReadAtExt, runtime::Runtime};
 use encoding_rs::SHIFT_JIS;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LoadedFile {
     #[allow(dead_code)]
     pub path: Option<PathBuf>,

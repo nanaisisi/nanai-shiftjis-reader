@@ -1,38 +1,36 @@
-//! Sample for the `ScrollViewer` element.
-use windows_reactor::*;
 use crate::text_io::LoadedFile;
+use windows_reactor::*;
 
-#[allow(dead_code)]
-fn app(_cx: &mut RenderCx) -> Element {
-    let tall_body = vstack(
-        (1..=30)
-            .map(|i| text_block(format!("Line {i}")).font_size(13.0).into())
-            .collect::<Vec<Element>>(),
-    )
-    .spacing(4.0);
+struct Notepad;
 
-    let wide_body = text_block(
-        "This line is intentionally long so the ScrollViewer scrolls \
-             horizontally to reveal the full content.",
-    )
-    .font_size(13.0);
+impl Component for Notepad {
+    type Input = LoadedFile;
+    type Message = ();
 
-    vstack((
-        text_block("Default (vertical-only, auto)").bold(),
-        scroll_viewer(tall_body).max_height(120.0),
-        text_block("Both axes, always visible").bold(),
-        scroll_viewer(wide_body)
-            .horizontal_scroll_bar_visibility(ScrollBarVisibility::Visible)
-            .vertical_scroll_bar_visibility(ScrollBarVisibility::Visible)
-            .max_width(280.0)
-            .max_height(80.0),
-    ))
-    .spacing(8.0)
-    .into()
+    fn create(_input: &Self::Input, _context: &ComponentContext<Self>) -> Self {
+        Self
+    }
+
+    fn update(&mut self, _message: Self::Message, _context: &ComponentContext<Self>) {}
+
+    fn view(&self, input: &Self::Input, context: &mut ViewContext<Self>) -> View {
+        let title = input.path.as_ref().map_or_else(
+            || "Nanai Shift_JIS Notepad".to_string(),
+            |path| format!("Nanai Shift_JIS Notepad - {}", path.display()),
+        );
+        context.window_title(title);
+
+        StackPanel::new().spacing(8.0).children((
+            TextBlock::new()
+                .text("Nanai Shift_JIS Notepad")
+                .font_size(20.0),
+            ScrollViewer::new()
+                .vertical_scroll_bar_visibility(ScrollBarVisibility::Auto)
+                .content(TextBlock::new().text(input.content.clone()).font_size(14.0)),
+        ))
+    }
 }
 
-pub(crate) fn ui(loaded_file: LoadedFile) -> Result<()> {
-    bootstrap()?;
-    let _ = loaded_file;
-    Ok(())
+pub(crate) fn ui(loaded_file: LoadedFile) {
+    App::run_component::<Notepad>(loaded_file).expect("failed to start Windows Reactor UI");
 }
