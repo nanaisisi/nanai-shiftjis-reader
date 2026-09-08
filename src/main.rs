@@ -1,5 +1,7 @@
 // Shift_JIS テキストビューアのエントリーポイント。
 // MSIXパッケージ状態を確認した後、ファイルをデコードしてGUIを起動する。
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod text_io;
 mod ui;
 mod windows_msix;

@@ -86,6 +86,17 @@ try {
         if (Test-Path (Join-Path $projectRoot 'Assets')) {
             Copy-Item -Path (Join-Path $projectRoot 'Assets') -Destination $distDir -Recurse -Force
         }
+
+        # WinUI also loads localized resource DLLs and PRI files from subdirectories.
+        # Omitting these directories causes Microsoft.UI.Xaml.dll to fail during startup.
+        $runtimeDirectories = Get-ChildItem -Path (Join-Path $projectRoot 'target\release') -Directory |
+            Where-Object {
+                $_.Name -eq 'Microsoft.UI.Xaml' -or
+                $_.Name -match '^[a-z]{2,3}(-[A-Za-z0-9]+)+$'
+            }
+        foreach ($directory in $runtimeDirectories) {
+            Copy-Item -Path $directory.FullName -Destination $distDir -Recurse -Force
+        }
     }
 
     function New-Cert {
