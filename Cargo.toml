@@ -20,10 +20,12 @@ panic = "abort"
 strip = "symbols"
 
 [features]
-default = ["windows", "win-reactor-ui"]
-windows = ["dep:windows"]
-win-reactor-ui = ["dep:windows-reactor", "dep:windows-reactor-setup"]
-winio-ui = []
+default = ["win-reactor-ui"]
+win-reactor-ui = [
+    "dep:windows",
+    "dep:windows-reactor",
+    "dep:windows-reactor-setup",
+]
 gpui-ui = ["dep:gpui", "dep:gpui-component", "dep:gpui_platform"]
 
 [dependencies]

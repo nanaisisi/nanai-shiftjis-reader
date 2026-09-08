@@ -78,14 +78,13 @@ try {
         if (-not (Test-Path $distDir)) {
             New-Item -ItemType Directory -Path $distDir | Out-Null
         }
+
+        Write-Host 'Copying binaries and assets to dist...' -ForegroundColor Cyan
         Copy-Item -Path $releasePath -Destination $distDir -Force
-        if (Test-Path $releaseDllPath) {
-            Copy-Item -Path $releaseDllPath -Destination $distDir -Force
-        }
-        Copy-Item -Path $projectRoot\appxmanifest.xml -Destination $distDir -Force
-        if (Test-Path (Join-Path $projectRoot 'Assets')) {
-            Copy-Item -Path (Join-Path $projectRoot 'Assets') -Destination $distDir -Recurse -Force
-        }
+        
+# Copy WinUI / Windows App SDK runtime DLLs and PRI files
+        Copy-Item -Path (Join-Path $projectRoot 'target\release\*.dll') -Destination $distDir -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path (Join-Path $projectRoot 'target\release\*.pri') -Destination $distDir -Force -ErrorAction SilentlyContinue
 
         # WinUI also loads localized resource DLLs and PRI files from subdirectories.
         # Omitting these directories causes Microsoft.UI.Xaml.dll to fail during startup.
@@ -96,6 +95,17 @@ try {
             }
         foreach ($directory in $runtimeDirectories) {
             Copy-Item -Path $directory.FullName -Destination $distDir -Recurse -Force
+        }
+
+        # Copy manifest
+        $manifestPath = Join-Path $projectRoot 'appxmanifest.xml'
+        if (Test-Path $manifestPath) {
+            Copy-Item -Path $manifestPath -Destination $distDir -Force
+        }
+
+        # Copy Assets
+        if (Test-Path (Join-Path $projectRoot 'Assets')) {
+            Copy-Item -Path (Join-Path $projectRoot 'Assets') -Destination $distDir -Recurse -Force
         }
     }
 
@@ -109,7 +119,12 @@ try {
 
     function New-MsixPackage {
         Write-Host 'Packing MSIX...' -ForegroundColor Cyan
-        winapp package $distDir --manifest (Join-Path $distDir 'appxmanifest.xml') --output $msixPath --cert $certPath
+        $manifestInDist = if (Test-Path (Join-Path $distDir 'Package.appxmanifest')) {
+            Join-Path $distDir 'Package.appxmanifest'
+        } else {
+            Join-Path $distDir 'appxmanifest.xml'
+        }
+        winapp package $distDir --manifest $manifestInDist --output $msixPath --cert $certPath
         if (-not (Test-Path $msixPath)) {
             Write-Warning "MSIX package not found at expected path: $msixPath"
         }
