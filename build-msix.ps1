@@ -35,7 +35,7 @@ try {
     $exeName = 'nanai-shiftjis-notepad.exe'
     $debugPath = Join-Path $projectRoot 'target\debug\' $exeName
     $releasePath = Join-Path $projectRoot 'target\release\' $exeName
-    $releaseDllPath = Join-Path $projectRoot 'target\release\nanai-shiftjis-notepad_dll.dll'
+    $releaseDllPath = Join-Path $projectRoot 'target\release\nanai_shiftjis_notepad_dll.dll'
     $distDir = Join-Path $projectRoot 'dist'
     $certPath = Join-Path $projectRoot 'devcert.pfx'
     $msixName = 'nanai-shiftjis-notepad.msix'
@@ -75,27 +75,19 @@ try {
     }
 
     function New-Dist {
-        if (-not (Test-Path $distDir)) {
-            New-Item -ItemType Directory -Path $distDir | Out-Null
+        # Do not package stale binaries or private Windows App SDK DLLs.
+        # The MSIX manifest uses the framework-dependent Reactor deployment.
+        if (Test-Path $distDir) {
+            Remove-Item -Path $distDir -Recurse -Force
         }
+        New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 
         Write-Host 'Copying binaries and assets to dist...' -ForegroundColor Cyan
         Copy-Item -Path $releasePath -Destination $distDir -Force
-        
-# Copy WinUI / Windows App SDK runtime DLLs and PRI files
-        Copy-Item -Path (Join-Path $projectRoot 'target\release\*.dll') -Destination $distDir -Force -ErrorAction SilentlyContinue
-        Copy-Item -Path (Join-Path $projectRoot 'target\release\*.pri') -Destination $distDir -Force -ErrorAction SilentlyContinue
-
-        # WinUI also loads localized resource DLLs and PRI files from subdirectories.
-        # Omitting these directories causes Microsoft.UI.Xaml.dll to fail during startup.
-        $runtimeDirectories = Get-ChildItem -Path (Join-Path $projectRoot 'target\release') -Directory |
-            Where-Object {
-                $_.Name -eq 'Microsoft.UI.Xaml' -or
-                $_.Name -match '^[a-z]{2,3}(-[A-Za-z0-9]+)+$'
-            }
-        foreach ($directory in $runtimeDirectories) {
-            Copy-Item -Path $directory.FullName -Destination $distDir -Recurse -Force
+        if (-not (Test-Path $releaseDllPath)) {
+            throw "COM DLL not found: $releaseDllPath"
         }
+        Copy-Item -Path $releaseDllPath -Destination $distDir -Force
 
         # Copy manifest
         $manifestPath = Join-Path $projectRoot 'appxmanifest.xml'
