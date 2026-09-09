@@ -1,6 +1,6 @@
 # Nanai Shift_JIS Notepad
 
-AI 生成です。  
+AI 生成です。
 AI generated content.
 
 ## Features
