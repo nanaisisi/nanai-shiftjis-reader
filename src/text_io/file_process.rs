@@ -2,7 +2,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::thread;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use compio::{fs::OpenOptions, io::AsyncReadAtExt, runtime::Runtime};
 use encoding_rs::SHIFT_JIS;
 
@@ -18,7 +18,10 @@ pub struct LoadedFile {
 /// 指定されたパスへ Shift_JIS エンコーディングでテキストを保存する。
 #[allow(dead_code)]
 pub fn save_file_shiftjis(path: &Path, content: &str) -> Result<()> {
-    let (encoded_bytes, _, _) = SHIFT_JIS.encode(content);
+    let (encoded_bytes, _, had_errors) = SHIFT_JIS.encode(content);
+    if had_errors {
+        bail!("保存できない文字が含まれています。Shift_JISで表現できる文字に置き換えてください");
+    }
     std::fs::write(path, &encoded_bytes)
         .with_context(|| format!("couldn't save to {}", path.display()))?;
     Ok(())
@@ -58,7 +61,7 @@ pub fn file_process() -> Result<LoadedFile> {
     if paths.is_empty() {
         return Ok(LoadedFile {
             path: None,
-            content: String::from("None content"),
+            content: String::new(),
         });
     }
 
@@ -80,15 +83,9 @@ pub fn file_process() -> Result<LoadedFile> {
         output.push_str(&decoded_file);
     }
 
-    let final_content = if output.trim().is_empty() {
-        String::from("None content")
-    } else {
-        output
-    };
-
     Ok(LoadedFile {
         path: primary_path,
-        content: final_content,
+        content: output,
     })
 }
 
